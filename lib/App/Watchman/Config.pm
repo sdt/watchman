@@ -1,10 +1,10 @@
 package App::Watchman::Config;
 
-# ABSTRACT: watchman configuration
-# VERSION
-
 use 5.12.0;
 use warnings;
+
+# ABSTRACT: watchman configuration
+# VERSION
 
 use Config::General;
 use File::HomeDir;

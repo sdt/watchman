@@ -1,10 +1,10 @@
 package App::Watchman;
 
-# ABSTRACT: watch for interesting posts and notify about them
-# VERSION
-
 use 5.12.0;
 use warnings;
+
+# ABSTRACT: watch for interesting posts and notify about them
+# VERSION
 
 use List::Util qw( max );
 

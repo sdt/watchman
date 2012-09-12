@@ -3,6 +3,10 @@
 use 5.12.0;
 use warnings;
 
+# PODNAME: watchman
+# ABSTRACT: Watch out!
+# VERSION
+
 use App::Watchman;
 
 my $watchman = App::Watchman->new;

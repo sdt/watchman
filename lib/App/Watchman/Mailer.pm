@@ -1,10 +1,10 @@
 package App::Watchman::Mailer;
 
-# ABSTRACT: email sender
-# VERSION
-
 use 5.12.0;
 use warnings;
+
+# ABSTRACT: email sender
+# VERSION
 
 use Email::Sender::Simple;
 use Email::Simple;

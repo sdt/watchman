@@ -1,10 +1,10 @@
 package App::Watchman::Schema;
 
-# ABSTRACT: tmdb watchlist scraper
-# VERSION
-
 use 5.12.0;
 use warnings;
+
+# ABSTRACT: tmdb watchlist scraper
+# VERSION
 
 use DBI;
 

@@ -1,10 +1,10 @@
 package App::Watchman::TMDB;
 
-# ABSTRACT: tmdb watchlist scraper
-# VERSION
-
 use 5.12.0;
 use warnings;
+
+# ABSTRACT: tmdb watchlist scraper
+# VERSION
 
 use WWW::TMDB::API;
 
