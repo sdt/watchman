@@ -12,10 +12,11 @@ use Sys::Hostname;
 
 use Method::Signatures;
 use Moose;
+use MooseX::Types::Email qw( EmailAddress );
 
 has [qw( to from )] => (
     is => 'ro',
-    isa => 'Str', #XXX: email address type here?
+    isa => EmailAddress,
     required => 1,
 );
 
