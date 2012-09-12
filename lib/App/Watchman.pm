@@ -22,35 +22,24 @@ has [qw( config mailer schema tmdb nzbmatrix )] => (
     lazy_build => 1,
 );
 
-_set_handlers(
-    mailer    => { send_email       => 'send' },
-    nzbmatrix => { search           => 'search' },
-    schema    => {
-        fetch_searchlist  => 'fetch_searchlist',
-        update_searchlist => 'update_searchlist',
-        update_watchlist  => 'update_watchlist',
-    },
-    tmdb      => { watchlist        => 'watchlist' },
-);
-
 method run {
     # Ask TMDB for the current watchlist
-    my $watchlist = $self->watchlist;
+    my $watchlist = $self->tmdb->watchlist;
 
     # Update the DB with the current watchlist
-    my ($added, $removed) = $self->update_watchlist($watchlist);
+    my ($added, $removed) = $self->schema->update_watchlist($watchlist);
 
     # Add added and updated movies to email notification
 
     # Get a list of movies that are due for a search
-    my $searchlist = $self->fetch_searchlist;
+    my $searchlist = $self->schema->fetch_searchlist;
 
     my @new_hits;
 
     # For each movie in the search list, update the search results
     for my $movie (@$searchlist) {
         my $title = $movie->{title} . ' ' . $movie->{year};
-        my $results = $self->search($title);
+        my $results = $self->nzbmatrix->search($title);
 
         my @new_results;
 
@@ -69,7 +58,7 @@ method run {
         }
     }
 
-    $self->update_searchlist(map { $_->{movie} } @new_hits);
+    $self->schema->update_searchlist(map { $_->{movie} } @new_hits);
 
     my $email = $self->format_email(
         added => $added,
@@ -80,7 +69,7 @@ method run {
     print $email;
 
     if ($email) {
-        $self->send_email(body => $email);
+        $self->mailer->send(body => $email);
     }
 }
 
