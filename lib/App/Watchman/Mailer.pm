@@ -8,6 +8,7 @@ use warnings;
 
 use Email::Sender::Simple;
 use Email::Simple;
+use Sys::Hostname;
 
 use Method::Signatures;
 use Moose;
@@ -18,7 +19,9 @@ has [qw( to from )] => (
     required => 1,
 );
 
-method send (:$subject = 'Message from the watchman', :$body) {
+my $default_subject = 'Message from the watchman at ' . hostname;
+
+method send (:$subject = $default_subject, :$body) {
     my $email = Email::Simple->create(
         header => [
             To      => $self->to,
