@@ -13,6 +13,7 @@ use Sys::Hostname;
 use Method::Signatures;
 use Moose;
 use MooseX::Types::Email qw( EmailAddress );
+use namespace::autoclean;
 
 has [qw( to from )] => (
     is => 'ro',
@@ -35,4 +36,5 @@ method send (:$subject = $default_subject, :$body) {
     Email::Sender::Simple->send($email);
 }
 
+__PACKAGE__->meta->make_immutable;
 1;

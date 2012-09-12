@@ -16,6 +16,7 @@ use App::Watchman::TMDB;
 
 use Method::Signatures;
 use Moose;
+use namespace::autoclean;
 
 has [qw( config mailer schema tmdb nzbmatrix )] => (
     is => 'ro',
@@ -171,6 +172,7 @@ sub _set_handlers {
     }
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
 
 __END__

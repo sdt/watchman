@@ -10,6 +10,7 @@ use DBI;
 
 use Method::Signatures;
 use Moose;
+use namespace::autoclean;
 
 has [qw( filename )] => (
     is => 'ro',
@@ -132,4 +133,5 @@ method _build_dbh {
     return $dbh;
 }
 
+__PACKAGE__->meta->make_immutable;
 1;

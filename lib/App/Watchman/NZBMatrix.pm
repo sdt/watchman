@@ -12,6 +12,7 @@ use URI;
 
 use Method::Signatures;
 use Moose;
+use namespace::autoclean;
 
 has [qw( apikey username )] => (
     is => 'ro',
@@ -93,4 +94,5 @@ func _decode ($data) {
     return @results;
 }
 
+__PACKAGE__->meta->make_immutable;
 1;

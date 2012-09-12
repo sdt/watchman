@@ -10,6 +10,7 @@ use WWW::TMDB::API;
 
 use Method::Signatures;
 use Moose;
+use namespace::autoclean;
 
 my $api_key = 'd83ccf1c8c6ca49a86fe647198323b38';
 
@@ -48,4 +49,5 @@ method _build_watchlist {
     return \@watchlist;
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
