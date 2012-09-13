@@ -3,23 +3,12 @@ package Test::Mock::UserAgent;
 use 5.12.0;
 use warnings;
 
-use Moose;
-use namespace::autoclean;
+use Method::Signatures;
 
-has 'results' => (
-    traits  => ['Array'],
-    is      => 'ro',
-    isa     => 'ArrayRef',
-    default => sub { [] },
-    handles => {
-        next_result     => 'shift',
-        add_results     => 'push',
-        clear_results   => 'clear',
-    },
-);
+method new ($class:, @res)  { bless [ @res ], $class }
+method add_results (@res)   { push(@$self, @res) }
+method request ($req)       { shift(@$self) }
 
-sub request { shift->next_result }
-sub isa     { 1 }  # to pass WWW::TMDB::API isa('LWP::UserAgent') test - dodgy?
+sub isa { 1 }  # to pass WWW::TMDB::API isa('LWP::UserAgent') test - dodgy?
 
-__PACKAGE__->meta->make_immutable;
 1;
