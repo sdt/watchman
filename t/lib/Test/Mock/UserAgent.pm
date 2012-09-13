@@ -8,6 +8,7 @@ use Method::Signatures;
 method new ($class:, @res)  { bless [ @res ], $class }
 method add_results (@res)   { push(@$self, @res) }
 method request ($req)       { shift(@$self) }
+method get ($req)           { shift(@$self) }
 
 sub isa { 1 }  # to pass WWW::TMDB::API isa('LWP::UserAgent') test - dodgy?
 
