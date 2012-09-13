@@ -18,7 +18,8 @@ has 'results' => (
     },
 );
 
-sub get { shift->next_result }
+sub request { shift->next_result }
+sub isa     { 1 }  # to pass WWW::TMDB::API isa('LWP::UserAgent') test - dodgy?
 
 __PACKAGE__->meta->make_immutable;
 1;
