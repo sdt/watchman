@@ -23,17 +23,22 @@ has [qw( config mailer schema tmdb nzbmatrix )] => (
     lazy_build => 1,
 );
 
+method movies {
+    #TODO: is this necessary, can run keep the same resultset?
+    return $self->schema->resultset('Movie');
+}
+
 method run {
     # Ask TMDB for the current watchlist
     my $watchlist = $self->tmdb->watchlist;
 
     # Update the DB with the current watchlist
-    my ($added, $removed) = $self->schema->update_watchlist($watchlist);
+    my ($added, $removed) = $self->movies->update_watchlist($watchlist);
 
     # Add added and updated movies to email notification
 
     # Get a list of movies that are due for a search
-    my $searchlist = $self->schema->fetch_searchlist;
+    my $searchlist = $self->movies->fetch_searchlist;
 
     my @new_hits;
 
@@ -56,10 +61,11 @@ method run {
                 movie => $movie,
                 results => \@new_results,
             });
+
+            $self->movies->find({ tmdb_id => $movie->{tmdb_id} });
+                         ->update({ last_nzbid => $movie->{last_nzbid} });
         }
     }
-
-    $self->schema->update_searchlist(map { $_->{movie} } @new_hits);
 
     my $email = $self->format_email(
         added => $added,
