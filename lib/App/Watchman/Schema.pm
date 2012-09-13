@@ -5,6 +5,7 @@ use warnings;
 
 # VERSION
 
+use Log::Any qw( $log );
 use base 'DBIx::Class::Schema';
 
 use Method::Signatures;
@@ -15,6 +16,7 @@ method new ($class: :$filename) {
     my $self = $class->connect("DBI:SQLite:$filename");
 
     if (!$db_exists) {
+        $log->info("Creating database $filename");
         $self->deploy;
     }
 

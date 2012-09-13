@@ -6,8 +6,9 @@ use warnings;
 # ABSTRACT: tmdb watchlist scraper
 # VERSION
 
-use WWW::TMDB::API;
+use Log::Any qw( $log );
 use LWP::UserAgent;
+use WWW::TMDB::API;
 
 use Method::Signatures;
 use Moose;

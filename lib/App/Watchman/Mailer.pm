@@ -8,6 +8,7 @@ use warnings;
 
 use Email::Sender::Simple;
 use Email::Simple;
+use Log::Any qw( $log );
 use Sys::Hostname;
 
 use Method::Signatures;
@@ -24,6 +25,7 @@ has [qw( to from )] => (
 my $default_subject = 'Message from the watchman at ' . hostname;
 
 method send (:$subject = $default_subject, :$body) {
+    $log->info('Sending email to ', $self->to);
     my $email = Email::Simple->create(
         header => [
             To      => $self->to,
@@ -34,6 +36,7 @@ method send (:$subject = $default_subject, :$body) {
     );
 
     Email::Sender::Simple->send($email);
+    $log->info('Email sent');
 }
 
 __PACKAGE__->meta->make_immutable;

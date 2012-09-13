@@ -13,6 +13,7 @@ use App::Watchman::Mailer;
 use App::Watchman::NZBMatrix;
 use App::Watchman::Schema;
 use App::Watchman::TMDB;
+use Log::Any qw( $log );
 
 use Method::Signatures;
 use Moose;
@@ -31,14 +32,18 @@ method movies {
 method run {
     # Ask TMDB for the current watchlist
     my $watchlist = $self->tmdb->watchlist;
+    $log->info(scalar @$watchlist, ' items in watchlist');
 
     # Update the DB with the current watchlist
     my ($added, $removed) = $self->movies->update_watchlist($watchlist);
+    $log->info(scalar @$added, ' items added');
+    $log->info(scalar @$removed, ' items removed');
 
     # Add added and updated movies to email notification
 
     # Get a list of movies that are due for a search
     my $searchlist = $self->movies->fetch_searchlist;
+    $log->info(scalar @$searchlist, ' items in searchlist');
 
     my @new_hits;
 
@@ -64,6 +69,8 @@ method run {
 
             $self->movies->find({ tmdb_id => $movie->{tmdb_id} })
                          ->update({ last_nzbid => $movie->{last_nzbid} });
+
+            $log->info(scalar @new_results, " new hits for $title");
         }
     }
 
@@ -72,8 +79,6 @@ method run {
         removed => $removed,
         new_hits => \@new_hits,
     );
-
-    print $email;
 
     if ($email) {
         $self->mailer->send(body => $email);

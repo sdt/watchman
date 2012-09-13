@@ -7,6 +7,7 @@ use warnings;
 # VERSION
 
 use IO::String;
+use Log::Any qw( $log );
 use LWP::UserAgent;
 use URI;
 
@@ -37,6 +38,7 @@ method _build_ua {
 }
 
 method search ($title) {
+    $log->info("Searching nzbmatrix for [$title]");
     die 'NZBMatrix api rate limit exceeded'
         if $self->searches_remaining < 10;
 
@@ -64,12 +66,14 @@ method search ($title) {
         if $response->content =~ /^error:(.*)$/;
 
     my @results = _decode($response->content);
+    $log->info('Found ', scalar @results, ' raw results');
 
     my @filtered_results = grep {
         $_->{category} =~ /^Movies >/ &&
         1
     } @results;
 
+    $log->info('Found ', scalar @filtered_results, ' filtered results');
     return \@filtered_results;
 }
 

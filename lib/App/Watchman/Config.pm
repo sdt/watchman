@@ -9,6 +9,7 @@ use warnings;
 use Config::General;
 use File::HomeDir;
 use File::Spec;
+use Log::Any qw( $log );
 
 sub filename {
     return $ENV{WATCHMANRC}
@@ -19,7 +20,10 @@ sub load {
     my $filename = filename();
 
     my $default = get_default();
-    return $default unless -e $filename;
+    if (! -e $filename) {
+        $log->warn("Config file $filename not found");
+        return $default;
+    }
 
     my $cfg = Config::General->new(
         -ConfigFile => $filename,
