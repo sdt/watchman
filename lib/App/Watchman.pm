@@ -62,7 +62,7 @@ method run {
                 results => \@new_results,
             });
 
-            $self->movies->find({ tmdb_id => $movie->{tmdb_id} });
+            $self->movies->find({ tmdb_id => $movie->{tmdb_id} })
                          ->update({ last_nzbid => $movie->{last_nzbid} });
         }
     }
