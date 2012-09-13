@@ -7,7 +7,14 @@ use warnings;
 # ABSTRACT: Watch out!
 # VERSION
 
+use Log::Any::Adapter;
+use Log::Any::Plugin;
+
 use App::Watchman;
+
+Log::Any::Adapter->set('Stdout');
+Log::Any::Plugin->add('Stringify');
+Log::Any::Plugin->add('Levels', level => 'info');
 
 my $watchman = App::Watchman->new;
 $watchman->run;
