@@ -7,6 +7,7 @@ use warnings;
 # VERSION
 
 use WWW::TMDB::API;
+use LWP::UserAgent;
 
 use Method::Signatures;
 use Moose;
@@ -20,13 +21,17 @@ has [qw( user_id session_id )] => (
     required => 1,
 );
 
-has [qw( api watchlist )] => (
+has [qw( api ua watchlist )] => (
     is => 'ro',
     lazy_build => 1,
 );
 
 method _build_api {
-    WWW::TMDB::API->new( api_key => $api_key );
+    WWW::TMDB::API->new( api_key => $api_key, ua => $self->ua );
+}
+
+method _build_ua {
+    LWP::UserAgent->new
 }
 
 method _build_watchlist {
