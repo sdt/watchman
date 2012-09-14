@@ -22,7 +22,7 @@ has [qw( user_id session_id )] => (
     required => 1,
 );
 
-has [qw( api ua watchlist )] => (
+has [qw( api ua )] => (
     is => 'ro',
     lazy_build => 1,
 );
@@ -35,7 +35,7 @@ method _build_ua {
     LWP::UserAgent->new
 }
 
-method _build_watchlist {
+method get_watchlist {
     my $results = $self->api->send_api(
         [ account => $self->user_id, 'movie_watchlist' ],
         { session_id => 1 }, { session_id => $self->session_id }

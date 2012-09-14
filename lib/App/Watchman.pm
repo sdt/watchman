@@ -32,7 +32,7 @@ method movies {
 
 method run {
     # Ask TMDB for the current watchlist
-    my $watchlist = $self->tmdb->watchlist;
+    my $watchlist = $self->tmdb->get_watchlist;
     $log->info(scalar @$watchlist, ' items in watchlist');
 
     # Update the DB with the current watchlist

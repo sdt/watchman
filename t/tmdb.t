@@ -42,7 +42,7 @@ my $tmdb = App::Watchman::TMDB->new(
     ua => $ua, session_id => 'testing', user_id => 'testing',
 );
 
-my $watchlist = $tmdb->watchlist;
+my $watchlist = $tmdb->get_watchlist;
 
 my $num_results = $responses[0]->{total_results};
 is(scalar @$watchlist, $num_results, "Watchlist right size");

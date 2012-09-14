@@ -27,7 +27,7 @@ Time::Fake->offset($timenow);
 
     method new($class:)         { bless [ ], $class }
     method stuff(@a)            { @$self = @a }
-    method watchlist()          { shift(@$self) // [] }
+    method get_watchlist()      { shift(@$self) // [] }
 }
 
 use App::Watchman;
