@@ -215,6 +215,27 @@ lives_ok { $wm->run } 'caught exception';
 is(emails()->delivery_count, 0, "No emails sent");
 searches_made_is(0);
 
+#------------------------------------------------------------------------------
+note 'Run with NZBMatrix dying';
+add_hours(25);
+
+$tmdb->stuff(\@tmdb_data);
+$nzbmatrix->die_next(2);
+
+lives_ok { $wm->run } 'caught exception';
+is(emails()->delivery_count, 0, "No emails sent");
+searches_made_is(3);
+
+#------------------------------------------------------------------------------
+note 'Run again immediately NZBMatrix dying';
+
+$tmdb->stuff(\@tmdb_data);
+$nzbmatrix->die_next(0);
+$wm->run;
+
+is(emails()->delivery_count, 0, "No emails sent");
+searches_made_is(2); # The ones we missed before
+
 done_testing();
 #------------------------------------------------------------------------------
 

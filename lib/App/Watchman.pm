@@ -63,7 +63,13 @@ method run {
     # For each movie in the search list, update the search results
     for my $movie (@$searchlist) {
         my $title = $movie->{title} . ' ' . $movie->{year};
-        my $results = $self->nzbmatrix->search($title);
+        my $results = try {
+            $self->nzbmatrix->search($title);
+        }
+        catch {
+            $log->warn("NZBMatrix search for $title: $_");
+        };
+        next unless $results;
 
         my @new_results;
 
