@@ -17,7 +17,7 @@ Time::Fake->offset($timenow);
 
     method new($class:)         { bless { res => [ ], rem => 100 }, $class }
     method stuff(@a)            { @{ $self->{res} } = @a }
-    method search($term)        { $self->{rem}--; shift($self->{res}) // [] }
+    method search($term)        { $self->{rem}--; shift(@{$self->{res}}) // [] }
     method searches_remaining   { $self->{rem} }
 }
 
@@ -25,9 +25,13 @@ Time::Fake->offset($timenow);
     package Test::Mock::TMDB;
     use Method::Signatures;
 
-    method new($class:)         { bless [ ], $class }
-    method stuff(@a)            { @$self = @a }
-    method get_watchlist()      { shift(@$self) // [] }
+    method new($class:)         { bless { res => [ ], die => 0 }, $class }
+    method stuff(@a)            { @{ $self->{res} } = @a }
+    method die_next($count = 1) { $self->{die} = $count }
+    method get_watchlist() {
+        die 'get_watchlist died' if $self->{die}-- > 0;
+        shift(@{ $self->{res} }) // [];
+    }
 }
 
 use App::Watchman;
@@ -193,6 +197,15 @@ is(search_results($email, 'movieB'), 4, '4 hits on movie B');
 is(search_results($email, 'movieC'), 3, '3 hits on movie C');
 
 searches_made_is(3);
+
+#------------------------------------------------------------------------------
+note 'Run with TMDB dying';
+
+$tmdb->die_next;
+
+lives_ok { $wm->run } 'caught exception';
+is(emails()->delivery_count, 0, "No emails sent");
+searches_made_is(0);
 
 done_testing();
 #------------------------------------------------------------------------------

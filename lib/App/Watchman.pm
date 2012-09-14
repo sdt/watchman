@@ -15,6 +15,7 @@ use App::Watchman::Schema;
 use App::Watchman::TMDB;
 use Log::Any qw( $log );
 use URI::Escape;
+use Try::Tiny;
 
 use Method::Signatures;
 use Moose;
@@ -32,13 +33,24 @@ method movies {
 
 method run {
     # Ask TMDB for the current watchlist
-    my $watchlist = $self->tmdb->get_watchlist;
-    $log->info(scalar @$watchlist, ' items in watchlist');
+    my $watchlist;
+
+    try {
+        $watchlist = $self->tmdb->get_watchlist // [];
+        $log->info(scalar @$watchlist, ' items in watchlist');
+    }
+    catch {
+        $log->warn("TMDB: $_");
+    };
 
     # Update the DB with the current watchlist
-    my ($added, $removed) = $self->movies->update_watchlist($watchlist);
-    $log->info(scalar @$added, ' items added');
-    $log->info(scalar @$removed, ' items removed');
+    my ($added, $removed);
+    if ($watchlist) {
+        # Only update the watchlist if TMDB succeeded
+        ($added, $removed) = $self->movies->update_watchlist($watchlist);
+        $log->info(scalar @$added, ' items added');
+        $log->info(scalar @$removed, ' items removed');
+    }
 
     # Add added and updated movies to email notification
 
@@ -76,8 +88,8 @@ method run {
     }
 
     my $email = $self->format_email(
-        added => $added,
-        removed => $removed,
+        added    => $added   // [],
+        removed  => $removed // [],
         new_hits => \@new_hits,
     );
 
