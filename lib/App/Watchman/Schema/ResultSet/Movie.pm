@@ -13,9 +13,8 @@ method search_age_sec {     #TODO: this is clunky...
     return 24 * 60 * 60;
 }
 
-method as_movie_hashes {
+method as_hashes {
     return $self->search(undef, {
-            select => [qw( tmdb_id title year last_nzbid )],
             result_class => 'DBIx::Class::ResultClass::HashRefInflator',
             order_by => [qw( title year )],
         });
@@ -27,7 +26,7 @@ method update_watchlist ($watchlist) {
             active  => 1,
             tmdb_id => { -not_in => [ map { $_->{tmdb_id} } @$watchlist ] },
         });
-    my @removed = $removed_rs->as_movie_hashes->all;
+    my @removed = $removed_rs->as_hashes->all;
     $removed_rs->update({ active => 0 });
 
     my @added;
@@ -62,7 +61,7 @@ method fetch_searchlist {
             active => 1,
             last_searched => { '<' => $search_cutoff },
         });
-    my @searchlist = $searchlist_rs->as_movie_hashes->all;
+    my @searchlist = $searchlist_rs->as_hashes->all;
     $searchlist_rs->update({ last_searched => $now });
 
     return \@searchlist;
