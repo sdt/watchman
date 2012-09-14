@@ -14,6 +14,7 @@ use App::Watchman::NZBMatrix;
 use App::Watchman::Schema;
 use App::Watchman::TMDB;
 use Log::Any qw( $log );
+use URI::Escape;
 
 use Method::Signatures;
 use Moose;
@@ -92,10 +93,10 @@ method format_email (:$added, :$removed, :$new_hits) {
     my $body = '';
 
     if (@$added) {
-        $body .= "New movies added to watchlist\n\n";
+        $body .= "Movies added to watchlist\n\n";
 
         for my $movie (@$added) {
-            $body .= format_movie_info($movie);
+            $body .= format_movie_info('++', $movie);
         }
 
         $body .= "\n\n";
@@ -105,7 +106,7 @@ method format_email (:$added, :$removed, :$new_hits) {
         $body .= "Movies removed from watchlist\n\n";
 
         for my $movie (@$removed) {
-            $body .= format_movie_info($movie);
+            $body .= format_movie_info('--', $movie);
         }
 
         $body .= "\n\n";
@@ -117,7 +118,7 @@ method format_email (:$added, :$removed, :$new_hits) {
 
         for my $hit (@$new_hits) {
 
-            $body .= format_movie_info($hit->{movie});
+            $body .= format_search_query($hit->{movie});
             for my $result (@{ $hit->{results} }) {
                 $body .= format_search_result($result);
             }
@@ -129,9 +130,17 @@ method format_email (:$added, :$removed, :$new_hits) {
     return $body;
 }
 
-func format_movie_info ($movie) {
-    return sprintf("* %s (%d) http://www.themoviedb.org/movie/%d\n",
+func format_movie_info ($prefix, $movie) {
+    return sprintf("$prefix %s (%d) http://www.themoviedb.org/movie/%d\n",
         $movie->{title}, $movie->{year}, $movie->{tmdb_id}
+    );
+}
+
+func format_search_query ($movie) {
+    return sprintf(
+        "** %s (%d) http://nzbmatrix.com/nzb-search.php?search=%s\n",
+        $movie->{title}, $movie->{year},
+        uri_escape($movie->{title} . ' ' . $movie->{year}),
     );
 }
 
