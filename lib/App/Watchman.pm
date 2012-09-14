@@ -83,6 +83,8 @@ method run {
     if ($email) {
         $self->mailer->send(body => $email);
     }
+
+    $log->info($self->nzbmatrix->searches_remaining, ' searches remaining');
 }
 
 method format_email (:$added, :$removed, :$new_hits) {
