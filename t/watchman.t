@@ -12,26 +12,34 @@ my $timenow = 1_000_000;
 Time::Fake->offset($timenow);
 
 {
-    package Test::Mock::NZBMatrix;
+    package Test::Mock::Base;
     use Method::Signatures;
 
-    method new($class:)         { bless { res => [ ], rem => 100 }, $class }
-    method stuff(@a)            { @{ $self->{res} } = @a }
-    method search($term)        { $self->{rem}--; shift(@{$self->{res}}) // [] }
+    method new($class:, %h)     { bless { q => [ ], die => 0, %h }, $class }
+    method stuff(@a)            { @{ $self->{q} } = @a }
+    method die_next($count = 1) { $self->{die} = $count }
+    method get()                {
+        die if $self->{die}-- > 0;
+        shift @{ $self->{q} }
+    }
+}
+
+{
+    package Test::Mock::NZBMatrix;
+    use base 'Test::Mock::Base';
+    use Method::Signatures;
+
+    method new($class:)         { $class->SUPER::new( rem => 100 ) }
+    method search($term)        { $self->{rem}--; $self->get // [ ] }
     method searches_remaining   { $self->{rem} }
 }
 
 {
     package Test::Mock::TMDB;
+    use base 'Test::Mock::Base';
     use Method::Signatures;
 
-    method new($class:)         { bless { res => [ ], die => 0 }, $class }
-    method stuff(@a)            { @{ $self->{res} } = @a }
-    method die_next($count = 1) { $self->{die} = $count }
-    method get_watchlist() {
-        die 'get_watchlist died' if $self->{die}-- > 0;
-        shift(@{ $self->{res} }) // [];
-    }
+    method get_watchlist()      { $self->get // [] }
 }
 
 use App::Watchman;
