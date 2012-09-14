@@ -59,7 +59,7 @@ method fetch_searchlist {
 
     my $searchlist_rs = $self->search({
             active => 1,
-            last_searched => { '<' => $search_cutoff },
+            last_searched => { '<=' => $search_cutoff },
         });
     my @searchlist = $searchlist_rs->as_hashes->all;
     $searchlist_rs->update({ last_searched => $now });
