@@ -47,7 +47,6 @@ method update_watchlist ($watchlist) {
             $row->update({ active => 1 });
             push(@added, $movie);
         }
-
     }
 
     return ( \@added, \@removed );

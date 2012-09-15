@@ -72,8 +72,8 @@ method run {
         };
         next unless $results;
 
-        $self->movies->find({ tmdb_id => $movie->{tmdb_id} })
-                     ->update({ last_searched => time });
+        my $row = $self->movies->find({ tmdb_id => $movie->{tmdb_id} });
+        $row->set_column(last_searched => time);
 
         my @new_results;
 
@@ -90,11 +90,12 @@ method run {
                 results => \@new_results,
             });
 
-            $self->movies->find({ tmdb_id => $movie->{tmdb_id} })
-                         ->update({ last_nzbid => $movie->{last_nzbid} });
+            $row->set_column(last_nzbid => $movie->{last_nzbid});
 
             $log->info(scalar @new_results, " new hits for $title");
         }
+
+        $row->update;
     }
 
     my $email = $self->format_email(
