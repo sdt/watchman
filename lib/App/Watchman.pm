@@ -59,6 +59,7 @@ method run {
     $log->info(scalar @$searchlist, ' items in searchlist');
 
     my @new_hits;
+    my $now = time;
 
     # For each movie in the search list, update the search results
     for my $movie (@$searchlist) {
@@ -70,6 +71,9 @@ method run {
             $log->warn("NZBMatrix search for $title: $_");
         };
         next unless $results;
+
+        $self->movies->find({ tmdb_id => $movie->{tmdb_id} })
+                     ->update({ last_searched => time });
 
         my @new_results;
 

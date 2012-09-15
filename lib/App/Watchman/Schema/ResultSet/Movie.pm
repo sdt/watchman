@@ -54,17 +54,13 @@ method update_watchlist ($watchlist) {
 }
 
 method fetch_searchlist {
-    my $now = time;
     my $search_cutoff = time - $self->search_age_sec;
 
     my $searchlist_rs = $self->search({
             active => 1,
             last_searched => { '<=' => $search_cutoff },
         });
-    my @searchlist = $searchlist_rs->as_hashes->all;
-    $searchlist_rs->update({ last_searched => $now });
-
-    return \@searchlist;
+    return [ $searchlist_rs->as_hashes->all ];
 }
 
 1;

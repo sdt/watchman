@@ -31,26 +31,24 @@ note 'Fetch a searchlist';
 my $searchlist = movie_rs()->fetch_searchlist;
 eq_or_diff(strip($searchlist, \@watchlist),
     'All movies in searchlist');
+update_last_searched($searchlist, $timenow);
 $searchlist = movie_rs()->fetch_searchlist;
 eq_or_diff($searchlist, [ ], 'No movies in repeat searchlist');
 
 note 'Wait until tomorrow and fetch the searchlist again';
-Time::Fake->offset($timenow += 25 * 60 * 60);
+Time::Fake->offset($timenow += 24 * 60 * 60);
 $searchlist = movie_rs()->fetch_searchlist;
 eq_or_diff(strip($searchlist, \@watchlist),
     'All movies in searchlist');
-$searchlist = movie_rs()->fetch_searchlist;
-eq_or_diff($searchlist, [ ], 'No movies in repeat searchlist');
 
 note 'Reactivate some movies';
 push(@watchlist, @inactive);
 ($added, $removed) = movie_rs()->update_watchlist(\@watchlist);
 eq_or_diff(strip($added, \@inactive), 'Two movies added');
 eq_or_diff($removed, [ ], 'No movies removed');
+update_last_searched($searchlist, $timenow);
 $searchlist = movie_rs()->fetch_searchlist;
 eq_or_diff(strip($searchlist, \@inactive), 'New movies in searchlist');
-$searchlist = movie_rs()->fetch_searchlist;
-eq_or_diff($searchlist, [ ], 'No movies in repeat searchlist');
 
 movie_rs()->find({ tmdb_id => 2 })->update({ last_nzbid => 12345 });
 
@@ -71,6 +69,20 @@ sub movie {
         title       => $title,
         year        => $year,
     };
+}
+
+sub update_last_searched {
+    my ($searchlist, $time) = @_;
+    movie_rs()->search({
+        tmdb_id => { -in => [ map { $_->{tmdb_id} } @$searchlist ] },
+    })->update({
+        last_searched => $time,
+    });
+}
+
+sub tmdb_ids {
+    my ($searchlist) = @_;
+    [ map { $_->{tmdb_id} } @$searchlist ];
 }
 
 sub movies {
