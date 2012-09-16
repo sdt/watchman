@@ -15,12 +15,12 @@ Time::Fake->offset($timenow);
     package Test::Mock::Base;
     use Method::Signatures;
 
-    method new($class:, %h)     { bless { q => [ ], die => 0, %h }, $class }
-    method stuff(@a)            { @{ $self->{q} } = @a }
+    method new($class:, %h)     { bless { res => [ ], die => 0, %h }, $class }
+    method stuff(@a)            { @{ $self->{res} } = @a }
     method die_next($count = 1) { $self->{die} = $count }
     method get()                {
         die if $self->{die}-- > 0;
-        shift @{ $self->{q} }
+        shift @{ $self->{res} }
     }
 }
 
@@ -39,7 +39,12 @@ Time::Fake->offset($timenow);
     use base 'Test::Mock::Base';
     use Method::Signatures;
 
-    method get_watchlist()      { $self->get // [] }
+    method new($class:)         { $class->SUPER::new( arg => [] ) }
+    method _get($a)             { push(@{ $self->{arg} }, $a);
+                                  $self->get // [] }
+    method get_watchlist()      { $self->_get('wl') }
+    method get_movie_info($id)  { $self->_get($id) }
+    method args                 { my $a = $self->{arg}; $self->{arg} = []; $a }
 }
 
 use App::Watchman;
@@ -57,203 +62,142 @@ my $wm = App::Watchman->new(
     tmdb      => $tmdb,
 );
 
-my $movieA = 'movieA/2001';
-my $movieB = 'movieB/2002';
-my $movieC = 'movieC/2003';
+my @movies = movies(4);
+my %tmdbs = map { $_->{tmdb_id} => $_ } @movies;
+my %nzbs  = map { $_->{tmdb_id} => [ results($_, 4) ] } @movies;
+my @keys = keys $movies[0];
+my $stash;
+my $age = 1000;
 
 #------------------------------------------------------------------------------
-note 'First run with two movies';
-my @tmdb_data = movies($movieA, $movieB);
-my %nzb_data  = (
-    $movieA => [ results($movieA, 3) ],
-    $movieB => [ results($movieB, 2) ],
-);
+note 'Add two movies to watchlist';
+$tmdb->stuff(@tmdbs{1, 2});
 
-$tmdb->stuff(\@tmdb_data);
-$nzbmatrix->stuff(@nzb_data{ sort keys %nzb_data });
+$wm->_update_watchlist($stash = {}, [ 1, 2 ]);
 
-$wm->run;
-
-is(emails()->delivery_count, 1, "One email sent");
-my $email = next_email();
-
-like($email->get_body, qr/Movies added/, 'Movies added');
-is(movies_added($email), 2, "2 movies added");
-movie_was_added($email, 'movieA');
-movie_was_added($email, 'movieB');
-
-unlike($email->get_body, qr/Movies removed/, 'No movies removed');
-is(movies_removed($email), 0, "0 movies removed");
-
-like($email->get_body, qr/New search results/, 'New search results');
-is(search_results($email, 'movieA'), 3, '3 hits on movie A');
-is(search_results($email, 'movieB'), 2, '2 hits on movie A');
-
-searches_made_is(2);
+eq_or_diff($tmdb->args, [ 1, 2 ], 'get_movie_info called twice');
+eq_or_diff(delete $stash->{added}, [ @tmdbs{1, 2} ], 'two movies added');
+eq_or_diff($stash, { }, 'no extras in stash');
+eq_or_diff([ searchlist_ids($wm) ], [ 1, 2 ], 'searchlist contains 1, 2');
 
 #------------------------------------------------------------------------------
-note 'Remove the second movie and run again';
-$tmdb->stuff([ $tmdb_data[0] ]);
-$wm->run;
+note 'Add one movie, remove one movie';
+$tmdb->stuff($tmdbs{3});
 
-is(emails()->delivery_count, 1, "One email sent");
-$email = next_email();
+$wm->_update_watchlist($stash = {}, [ 1, 3 ]);
 
-unlike($email->get_body, qr/Movies added/, 'No movies added');
-is(movies_added($email), 0, "No movies added");
-
-like($email->get_body, qr/Movies removed/, 'Movies removed');
-is(movies_removed($email), 1, "One movie removed");
-movie_was_removed($email, 'movieB');
-
-unlike($email->get_body, qr/New search results/, 'No new search results');
-
-searches_made_is(0);
+eq_or_diff($tmdb->args, [ 3 ], 'get_movie_info called once');
+eq_or_diff(delete $stash->{added}, [ $tmdbs{3} ], 'one movie added');
+eq_or_diff(movie_hashes(delete $stash->{deactivated}), [ $tmdbs{2} ],
+    'one movie deactivated');
+eq_or_diff($stash, { }, 'no extras in stash');
+eq_or_diff([ searchlist_ids($wm) ], [ 1, 3 ], 'searchlist contains 1, 3');
 
 #------------------------------------------------------------------------------
-note 'Re-add the second movie and run again';
-$tmdb->stuff(\@tmdb_data);
-$wm->run;
+note 'Add one movie, reactivate one movie';
+$tmdb->stuff($tmdbs{4});
 
-is(emails()->delivery_count, 1, "One email sent");
-$email = next_email();
+$wm->_update_watchlist($stash = {}, [ 1, 2, 3, 4 ]);
 
-like($email->get_body, qr/Movies added/, 'Movies added');
-is(movies_added($email), 1, "One movie added");
-movie_was_added($email, 'movieB');
-
-unlike($email->get_body, qr/Movies removed/, 'No movies removed');
-is(movies_removed($email), 0, "No movies removed");
-
-unlike($email->get_body, qr/New search results/, 'No new search results');
-
-searches_made_is(0);
+eq_or_diff($tmdb->args, [ 4 ], 'get_movie_info called once');
+eq_or_diff(delete $stash->{added}, [ $tmdbs{4} ], 'one movie added');
+eq_or_diff(movie_hashes(delete $stash->{reactivated}), [ $tmdbs{2} ],
+    'one movie reactivated');
+eq_or_diff($stash, { }, 'no extras in stash');
+eq_or_diff([ searchlist_ids($wm) ], [ 1 .. 4, ], 'searchlist contains 1 .. 4');
 
 #------------------------------------------------------------------------------
-note 'Re-run immediately with same watchlist';
-$tmdb->stuff(\@tmdb_data);
-$wm->run;
+note 'Update searchlist for one movie';
+$nzbmatrix->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
 
-is(emails()->delivery_count, 0, "No emails sent");
-searches_made_is(0);
-
-#------------------------------------------------------------------------------
-note 'Re-run with same watchlist a day later';
-add_hours(25);
-
-$tmdb->stuff(\@tmdb_data);
-$wm->run;
-
-is(emails()->delivery_count, 0, "No emails sent");
-searches_made_is(2);
-
-#------------------------------------------------------------------------------
-note 'Add a new watch item 12 hours later';
-add_hours(12);
-
-push(@tmdb_data, movie($movieC));
-$tmdb->stuff(\@tmdb_data);
-$wm->run;
-
-is(emails()->delivery_count, 1, "One email sent");
-$email = next_email();
-
-like($email->get_body, qr/Movies added/, 'Movies added');
-is(movies_added($email), 1, "One movie added");
-movie_was_added($email, 'movieC');
-
-unlike($email->get_body, qr/Movies removed/, 'No movies removed');
-is(movies_removed($email), 0, "No movies removed");
-
-unlike($email->get_body, qr/New search results/, 'No new search results');
+$wm->_run_searches($stash = {}, $wm->movies->search_rs({ tmdb_id => 1 }));
 
 searches_made_is(1);
+is(@{ $stash->{search_hits} }, 1, '1 movie with search hits');
+is(@{ $stash->{search_hits}->[0]->{results} }, 2, '2 search hits');
+delete $stash->{search_hits};
+eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
-note 'Re-run with same watchlist 12 hours later';
-add_hours(12);
+note 'Re-run search with no extra hits';
+$nzbmatrix->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
 
-$tmdb->stuff(\@tmdb_data);
-$wm->run;
+$wm->_run_searches($stash = {}, $wm->movies->search_rs({ tmdb_id => 1 }));
+searches_made_is(1);
+eq_or_diff($stash, { }, 'no extras in stash');
 
-is(emails()->delivery_count, 0, "No emails sent");
+#------------------------------------------------------------------------------
+note 'Update searchlist with two movies';
+$nzbmatrix->stuff([ $nzbs{1}->[2] ], [ $nzbs{2}->[0], $nzbs{2}->[1] ]);
+
+$wm->_run_searches($stash = {}, $wm->movies->search_rs(
+    { tmdb_id => { -in => [ 1, 2 ] } }, { order_by => 'tmdb_id' }));
+
 searches_made_is(2);
+is(@{ $stash->{search_hits} }, 2, '2 movies with search hits');
+is(@{ $stash->{search_hits}->[0]->{results} }, 1, '1 search hit for movie 1');
+is(@{ $stash->{search_hits}->[1]->{results} }, 2, '2 search hits for movie 2');
+delete $stash->{search_hits};
+eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
-note 'Add some results and search again 24 hours later';
-add_hours(26);
+note 'First search fails';
+$nzbmatrix->stuff([ $nzbs{2}->[2] ]);
+$nzbmatrix->die_next;
 
-push(@{ $nzb_data{$movieA} },  results($movieA, 1));
-push(@{ $nzb_data{$movieB} },  results($movieB, 4));
-$nzb_data{$movieC} = [ results($movieC, 3) ];
+$wm->_run_searches($stash = {}, $wm->movies->search_rs(
+    { tmdb_id => { -in => [ 1, 2 ] } }, { order_by => 'tmdb_id' }));
 
-$tmdb->stuff(\@tmdb_data);
-$nzbmatrix->stuff(@nzb_data{ sort keys %nzb_data });
-
-$wm->run;
-
-is(emails()->delivery_count, 1, "One email sent");
-$email = next_email();
-
-unlike($email->get_body, qr/Movies added/, 'No movies added');
-is(movies_added($email), 0, "No movies added");
-
-unlike($email->get_body, qr/Movies removed/, 'No movies removed');
-is(movies_removed($email), 0, "No movies removed");
-is(search_results($email, 'movieA'), 1, '1 hits on movie A');
-is(search_results($email, 'movieB'), 4, '4 hits on movie B');
-is(search_results($email, 'movieC'), 3, '3 hits on movie C');
-
-searches_made_is(3);
+searches_made_is(2);
+is(@{ $stash->{search_hits} }, 1, '1 movies with search hits');
+is(@{ $stash->{search_hits}->[0]->{results} }, 1, '1 search hit for movie 2');
+delete $stash->{search_hits};
+is(@{ $stash->{errors} }, 1, '1 error in stash');
+like($stash->{errors}->[0], qr/search.*failed/, 'One search failure');
+contains($stash->{errors}->[0], $movies[0]->{title}, 'Right movie failed');
+delete $stash->{errors};
+eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
-note 'Run with TMDB dying';
+note 'Fetch a watchlist';
+$tmdb->stuff([ 0 .. 3 ]);
 
+my $watchlist = $wm->_fetch_watchlist($stash = {});
+eq_or_diff($watchlist, [0 .. 3], 'Watchlist as expected');
+eq_or_diff($stash, { }, 'no extras in stash');
+
+#------------------------------------------------------------------------------
+note 'Fail while fetching a watchlist';
+$tmdb->stuff([ 0 .. 3 ]);
 $tmdb->die_next;
 
-lives_ok { $wm->run } 'caught exception';
-is(emails()->delivery_count, 0, "No emails sent");
-searches_made_is(0);
-
-#------------------------------------------------------------------------------
-note 'Run with NZBMatrix dying';
-add_hours(25);
-
-$tmdb->stuff(\@tmdb_data);
-$nzbmatrix->die_next(2);
-
-lives_ok { $wm->run } 'caught exception';
-is(emails()->delivery_count, 0, "No emails sent");
-searches_made_is(3);
-
-#------------------------------------------------------------------------------
-note 'Run again immediately NZBMatrix dying';
-
-$tmdb->stuff(\@tmdb_data);
-$nzbmatrix->die_next(0);
-$wm->run;
-
-is(emails()->delivery_count, 0, "No emails sent");
-searches_made_is(2); # The ones we missed before
+$watchlist = $wm->_fetch_watchlist($stash = {});
+eq_or_diff($watchlist, undef, 'Watchlist is undef');
+is(@{ $stash->{errors} }, 1, '1 error in stash');
+like($stash->{errors}->[0], qr/watchlist failed/, 'One search failure');
+delete $stash->{errors};
+eq_or_diff($stash, { }, 'no extras in stash');
 
 done_testing();
 #------------------------------------------------------------------------------
 
-sub movie_was_added {
-    my ($email, $title) = @_;
-    $TB->like($email->get_body, qr/\+\+ \Q$title\E/, "$title was added");
+sub subhashref {
+    my ($hash, $keys) = @_;
+    return { map { $_ => $hash->{$_} } @$keys };
 }
 
-sub movie_was_removed {
-    my ($email, $title) = @_;
-    $TB->like($email->get_body, qr/-- \Q$title\E/, "$title was removed");
+sub movie_hashes {
+    my ($movies) = @_;
+    my @keys = qw( title year tmdb_id );
+    return [ map { subhashref($_, \@keys) } @$movies ];
 }
 
 sub searches_made_is {
     my ($num_searches) = @_;
+    my $msg = $num_searches == 1 ? 'search was' : 'searches were';
     my $new_searches = $nzbmatrix->searches_remaining;
     $TB->is_num($searches - $new_searches, $num_searches,
-        "$num_searches searches were performed");
+        "$num_searches $msg performed");
     $searches = $new_searches;
 }
 
@@ -262,50 +206,35 @@ sub count_occurances {
     my $count =()= $string =~ /$regex/g;
 }
 
-sub movies_added {
-    my ($email) = @_;
-    count_occurances($email->get_body, qr/\+\+/);
-}
-
-sub movies_removed {
-    my ($email) = @_;
-    count_occurances($email->get_body, qr/--/);
-}
-
-sub search_results {
-    my ($email, $title) = @_;
-    count_occurances($email->get_body, qr/\Q$title\E.*link\.to/);
-}
-
 sub movie {
     state $next_id = 1;
-    my ($ty) = @_;
-    my ($title, $year) = split('/', $ty);
+    my $id = $next_id++;
     return {
-        tmdb_id => $next_id++,
-        title   => $title,
-        year    => $year,
+        tmdb_id => $id,
+        title   => sprintf("movie%03d", $id),
+        year    => 1990 + $id,
     };
 }
 
 sub movies {
-    map { movie($_) } @_
+    my ($n) = @_;
+    map { movie() } (1 .. $n);
 }
 
 sub result {
+    my ($movie) = @_;
     state $next_nzbid = 1;
-    my ($title) = @_;
     my $id = $next_nzbid++;
     return {
         nzbid   => $id,
-        nzbname => "$title $id",
+        nzbname => sprintf("%s (%d) %d", $movie->{title}, $movie->{year}, $id),
         link    => "link.to/$id",
     };
 }
 
 sub results {
-    my ($title, $count) = @_;
-    reverse map { result($title) } (1 .. $count);
+    my ($movie, $count) = @_;
+    map { result($movie) } (1 .. $count);
 }
 
 sub emails {
@@ -321,3 +250,14 @@ sub add_hours {
     Time::Fake->offset($timenow += $hours * 60 * 60);
 }
 
+sub searchlist_ids {
+    my ($wm) = @_;
+    sort $wm->movies->searchlist($age)->as_ids->get_column('tmdb_id')->all;
+}
+
+sub contains {
+    my ($got, $substr, $msg) = @_;
+    $msg //= "'$got' contains '$substr'";
+    $TB->like($got, qr/\Q$substr\E/, $msg);
+
+}

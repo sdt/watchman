@@ -36,23 +36,23 @@ method _build_ua {
 }
 
 method get_watchlist {
+    $log->info('Fetching watchlist from TMDB');
     my $results = $self->api->send_api(
         [ account => $self->user_id, 'movie_watchlist' ],
         { session_id => 1 }, { session_id => $self->session_id }
     );
 
-    my @watchlist;
-    for my $movie (@{ $results->{results} }) {
+    return [ sort { $a <=> $b } map { $_->{id} } @{ $results->{results} } ];
+}
 
-        my $info = $self->api->movie->info( ID => $movie->{id} );
-        push(@watchlist, {
-            tmdb_id => $info->{id},
-            title   => $info->{title},
-            year    => substr($info->{release_date}, 0, 4),
-        });
-    }
-
-    return \@watchlist;
+method get_movie_info ($tmdb_id) {
+    $log->info("Fetching movie info for #$tmdb_id");
+    my $info = $self->api->movie->info( ID => $tmdb_id );
+    return {
+        tmdb_id => $info->{id},
+        title   => $info->{title},
+        year    => substr($info->{release_date}, 0, 4),
+    };
 }
 
 __PACKAGE__->meta->make_immutable;

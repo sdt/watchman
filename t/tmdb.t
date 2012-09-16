@@ -43,17 +43,17 @@ my $tmdb = App::Watchman::TMDB->new(
 );
 
 my $watchlist = $tmdb->get_watchlist;
+eq_or_diff($watchlist, [ map { $_->{id} } @{ $responses[0]->{results} } ],
+    'Watchlist as expected');
 
-my $num_results = $responses[0]->{total_results};
-is(scalar @$watchlist, $num_results, "Watchlist right size");
-
+my $num_results = scalar @responses - 1;
 for my $i (1 .. $num_results) {
-    my $got = $watchlist->[$i - 1];
+    my $info = $tmdb->get_movie_info($watchlist->[$i-1]);
     my $expected = $responses[$i];
 
-    is($got->{title}, $expected->{title}, "Title $i is ok");
-    is($got->{tmdb_id}, $expected->{id}, "TMDB ID $i is ok");
-    is($got->{year}, substr($expected->{release_date}, 0, 4), "Year $i is ok");
+    is($info->{title}, $expected->{title}, "Title $i is ok");
+    is($info->{tmdb_id}, $expected->{id}, "TMDB ID $i is ok");
+    is($info->{year}, substr($expected->{release_date}, 0, 4), "Year $i is ok");
 }
 
 done_testing;

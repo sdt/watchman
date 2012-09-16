@@ -26,120 +26,125 @@ has [qw( config mailer schema tmdb nzbmatrix )] => (
     lazy_build => 1,
 );
 
+has search_min_age => (
+    is => 'ro',
+    isa => 'Int',
+    default => 24 * 60 * 60,
+);
+
 method movies {
     #TODO: is this necessary, can run keep the same resultset?
     return $self->schema->resultset('Movie');
 }
 
 method run {
-    # Ask TMDB for the current watchlist
-    my $watchlist;
+    my $stash = {};
 
-    try {
-        $watchlist = $self->tmdb->get_watchlist // [];
-        $log->info(scalar @$watchlist, ' items in watchlist');
-    }
-    catch {
-        $log->warn("TMDB: $_");
-    };
-
-    # Update the DB with the current watchlist
-    my ($added, $removed);
-    if ($watchlist) {
-        # Only update the watchlist if TMDB succeeded
-        ($added, $removed) = $self->movies->update_watchlist($watchlist);
-        $log->info(scalar @$added, ' items added');
-        $log->info(scalar @$removed, ' items removed');
+    if (my $watchlist = $self->_fetch_watchlist($stash)) {
+        $self->_update_watchlist($stash, $watchlist);
     }
 
-    # Add added and updated movies to email notification
+    my $searchlist = $self->movies->searchlist($self->search_min_age);
+    $self->_run_searches($stash, $searchlist);
 
-    # Get a list of movies that are due for a search
-    my $searchlist = $self->movies->fetch_searchlist;
-    $log->info(scalar @$searchlist, ' items in searchlist');
-
-    my @new_hits;
-    my $now = time;
-
-    # For each movie in the search list, update the search results
-    for my $movie (@$searchlist) {
-        my $title = $movie->{title} . ' ' . $movie->{year};
-        my $results = try {
-            $self->nzbmatrix->search($title);
-        }
-        catch {
-            $log->warn("NZBMatrix search for $title: $_");
-        };
-        next unless $results;
-
-        my $row = $self->movies->find({ tmdb_id => $movie->{tmdb_id} });
-        $row->set_column(last_searched => time);
-
-        my @new_results;
-
-        for my $result (@$results) {
-            if ($result->{nzbid} > $movie->{last_nzbid}) {
-                push(@new_results, $result);
-            }
-        }
-
-        if (@new_results) {
-            $movie->{last_nzbid} = max map { $_->{nzbid} } @$results;
-            push(@new_hits, {
-                movie => $movie,
-                results => \@new_results,
-            });
-
-            $row->set_column(last_nzbid => $movie->{last_nzbid});
-
-            $log->info(scalar @new_results, " new hits for $title");
-        }
-
-        $row->update;
-    }
-
-    my $email = $self->format_email(
-        added    => $added   // [],
-        removed  => $removed // [],
-        new_hits => \@new_hits,
-    );
-
-    if ($email) {
-        $self->mailer->send(body => $email);
+    if (%$stash) {
+        $self->mailer->send(body => $self->_format_email($stash));
     }
 
     $log->info($self->nzbmatrix->searches_remaining, ' searches remaining');
 }
 
-method format_email (:$added, :$removed, :$new_hits) {
+method _fetch_watchlist($stash) {
+    my $watchlist;
+    try {
+        $watchlist = $self->tmdb->get_watchlist;
+    }
+    catch {
+        push(@{ $stash->{errors} }, "Get TMDb watchlist failed: $_");
+    };
+    return $watchlist;
+}
+
+method _update_watchlist($stash, $watchlist) {
+
+    # Ask TMDB for the current watchlist
+    $log->info(scalar @$watchlist, ' items in watchlist');
+
+    my %seen;
+    my $deactivated = $self->movies->deactivated(@$watchlist);
+    if ($deactivated->count > 0) {
+        $stash->{deactivated} = [ $deactivated->sorted->as_hashes->all ];
+        $deactivated->update({ active => 0 });
+    }
+
+    my $reactivated = $self->movies->reactivated(@$watchlist);
+    if ($reactivated->count > 0) {
+        $stash->{reactivated} = [ $reactivated->sorted->as_hashes->all ];
+        $reactivated->update({ active => 1 });
+    }
+
+    my @added;
+    for my $id (@$watchlist) {
+        next if $self->movies->find({ tmdb_id => $id });
+
+        my $movie = $self->tmdb->get_movie_info($id);
+        $self->movies->create($movie);
+        push(@added, $movie);
+    }
+
+    $stash->{added} = \@added if @added;
+}
+
+method _run_searches($stash, $searchlist) {
+
+    $log->info($searchlist->count, ' items in searchlist');
+
+    my @new_hits;
+    my $now = time;
+
+    # For each movie in the search list, update the search results
+    while (my $movie = $searchlist->next) {
+        my $title = $movie->title . ' ' . $movie->year;
+        my $results;
+        try {
+            $results = $self->nzbmatrix->search($title);
+        }
+        catch {
+            push(@{ $stash->{errors} }, "NZBMatrix search '$title' failed: $_");
+        };
+        next unless $results;
+
+        @$results = grep { $_->{nzbid} > $movie->last_nzbid } @$results;
+        if (@$results) {
+            $movie->set_column(last_nzbid => max map { $_->{nzbid} } @$results);
+            push(@new_hits, {
+                movie => $movie,
+                results => $results,
+            });
+
+            $log->info(scalar $results, " new hits for $title");
+        }
+
+        $movie->update({ last_searched => $now });
+    }
+
+    $stash->{search_hits} = \@new_hits if @new_hits;
+}
+
+method _format_email($stash) {
 
     my $body = '';
 
-    if (@$added) {
-        $body .= "Movies added to watchlist\n\n";
+    $body .= format_movie_list($stash->{added},
+        '++', 'New movies added');
+    $body .= format_movie_list($stash->{reactivated},
+        '-+', 'Old movies reactivated');
+    $body .= format_movie_list($stash->{deactivated},
+        '--', 'Movies deactivated');
 
-        for my $movie (@$added) {
-            $body .= format_movie_info('++', $movie);
-        }
-
-        $body .= "\n\n";
-    }
-
-    if (@$removed) {
-        $body .= "Movies removed from watchlist\n\n";
-
-        for my $movie (@$removed) {
-            $body .= format_movie_info('--', $movie);
-        }
-
-        $body .= "\n\n";
-    }
-
-    if (@$new_hits) {
-
+    if ($stash->{search_hits}) {
         $body .= "New search results\n\n";
-
-        for my $hit (@$new_hits) {
+        for my $hit (@{ $stash->{search_hits} }) {
 
             $body .= format_search_query($hit->{movie});
             for my $result (@{ $hit->{results} }) {
@@ -150,7 +155,27 @@ method format_email (:$added, :$removed, :$new_hits) {
         }
     }
 
+    if ($stash->{search_hits}) {
+        $body .= "Errors occurred\n\n";
+
+        for my $error (@{ $stash->{errors} }) {
+            $body .= format_error($error);
+        }
+        $body .= "\n";
+    }
+
     return $body;
+}
+
+func format_movie_list ($list, $prefix, $msg) {
+    return '' unless $list;
+
+    my $text = "$msg\n\n";
+    for my $movie (@$list) {
+        $text .= format_movie_info($prefix, $movie);
+    }
+    $text .= "\n\n";
+    return $text;
 }
 
 func format_movie_info ($prefix, $movie) {
@@ -162,8 +187,8 @@ func format_movie_info ($prefix, $movie) {
 func format_search_query ($movie) {
     return sprintf(
         "** %s (%d) http://nzbmatrix.com/nzb-search.php?search=%s\n",
-        $movie->{title}, $movie->{year},
-        uri_escape($movie->{title} . ' ' . $movie->{year}),
+        $movie->title, $movie->year,
+        uri_escape($movie->title . ' ' . $movie->year),
     );
 }
 
@@ -171,6 +196,10 @@ func format_search_result ($result) {
     return sprintf("\t* %s http://%s\n",
         $result->{nzbname}, $result->{link}
     );
+}
+
+func format_error ($error) {
+    return sprintf("\t* %s\n", $error);
 }
 
 # Builder methods
@@ -208,13 +237,6 @@ method _build_tmdb {
         session_id => $cfg->{session},
         user_id    => $cfg->{user},
     );
-}
-
-sub _set_handlers {
-    my %h = @_;
-    while (my ($attr, $handlers) = each %h) {
-        has "+$attr" => ( handles => $handlers );
-    }
 }
 
 __PACKAGE__->meta->make_immutable;

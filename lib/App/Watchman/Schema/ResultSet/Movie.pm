@@ -9,57 +9,42 @@ use base 'App::Watchman::Schema::ResultSet';
 
 use Method::Signatures;
 
-method search_age_sec {     #TODO: this is clunky...
-    return 24 * 60 * 60;
-}
-
 method as_hashes {
     return $self->search(undef, {
             result_class => 'DBIx::Class::ResultClass::HashRefInflator',
-            order_by => [qw( title year )],
         });
 }
 
-method update_watchlist ($watchlist) {
+method as_ids {
+    return $self->search(undef, {
+            select => [qw( tmdb_id )],
+        });
+}
 
-    my $removed_rs = $self->search( {
+method sorted {
+    $self->search_rs(undef, { order_by => [qw( title year )] });
+}
+
+method deactivated(@tmdb_ids) {
+    $self->search({
             active  => 1,
-            tmdb_id => { -not_in => [ map { $_->{tmdb_id} } @$watchlist ] },
-        });
-    my @removed = $removed_rs->as_hashes->all;
-    $removed_rs->update({ active => 0 });
-
-    my @added;
-    for my $movie (@$watchlist) {
-        my $row = $self->find({ tmdb_id => $movie->{tmdb_id} });
-
-        if (!$row) {
-            # Insert movies which do not already exist.
-            $self->create({
-                tmdb_id => $movie->{tmdb_id},
-                title   => $movie->{title},
-                year    => $movie->{year},
-            });
-            push(@added, $movie);
-        }
-        elsif (!$row->active) {
-            # Reactivate existing inactive movies.
-            $row->update({ active => 1 });
-            push(@added, $movie);
-        }
-    }
-
-    return ( \@added, \@removed );
+            tmdb_id => { -not_in => \@tmdb_ids },
+        })->sorted;
 }
 
-method fetch_searchlist {
-    my $search_cutoff = time - $self->search_age_sec;
+method reactivated(@tmdb_ids) {
+    $self->search({
+            active  => 0,
+            tmdb_id => { -in => \@tmdb_ids },
+        })->sorted;
+}
 
-    my $searchlist_rs = $self->search({
-            active => 1,
+method searchlist($search_min_age) {
+    my $search_cutoff = time - $search_min_age;
+    $self->search({
+            active        => 1,
             last_searched => { '<=' => $search_cutoff },
-        });
-    return [ $searchlist_rs->as_hashes->all ];
+        })->sorted;
 }
 
 1;
