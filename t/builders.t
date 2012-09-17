@@ -2,18 +2,21 @@ use 5.12.0;
 use warnings;
 use Test::More;
 
+use File::Temp;
+use Config::General qw( SaveConfig );
+
 use App::Watchman;
 
-#XXX: create fake config file
-my $config = {
+my $config_fh = File::Temp->new;
+SaveConfig($config_fh->filename, {
     email => { to => 'xxx@yyy.zzz' },
     tmdb => { session => 'xxx', user => 'xxx' },
     nzbmatrix => { apikey => 'xxx', user => 'xxx' },
     dbname => ':memory:',
-};
+});
+$ENV{WATCHMANRC} = $config_fh->filename;
 
-my $wm = App::Watchman->new(config => $config);
-isa_ok($wm, 'App::Watchman');
+my $wm = App::Watchman->new;
 isa_ok($wm->mailer,         'App::Watchman::Mailer');
 isa_ok($wm->nzbmatrix,      'App::Watchman::NZBMatrix');
 isa_ok($wm->nzbmatrix->ua,  'LWP::UserAgent');
