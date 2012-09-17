@@ -12,7 +12,7 @@ my $timenow = 1_000_000;
 Time::Fake->offset($timenow);
 
 {
-    package Test::Mock::Base;
+    package Local::Mock::Base;
     use Method::Signatures;
 
     method new($class:, %h)     { bless { res => [ ], die => 0, %h }, $class }
@@ -25,8 +25,8 @@ Time::Fake->offset($timenow);
 }
 
 {
-    package Test::Mock::NZBMatrix;
-    use base 'Test::Mock::Base';
+    package Local::Mock::NZBMatrix;
+    use base 'Local::Mock::Base';
     use Method::Signatures;
 
     method new($class:)         { $class->SUPER::new( rem => 100 ) }
@@ -35,8 +35,8 @@ Time::Fake->offset($timenow);
 }
 
 {
-    package Test::Mock::TMDB;
-    use base 'Test::Mock::Base';
+    package Local::Mock::TMDB;
+    use base 'Local::Mock::Base';
     use Method::Signatures;
 
     method new($class:)         { $class->SUPER::new( arg => [] ) }
@@ -50,8 +50,8 @@ Time::Fake->offset($timenow);
 use App::Watchman;
 
 my $config    = { dbfile => ':memory:', email => { to => 'me@example.com' } };
-my $nzbmatrix = Test::Mock::NZBMatrix->new;
-my $tmdb      = Test::Mock::TMDB->new;
+my $nzbmatrix = Local::Mock::NZBMatrix->new;
+my $tmdb      = Local::Mock::TMDB->new;
 my $searches  = 100;
 
 is($nzbmatrix->searches_remaining, $searches, "$searches searches remaining");
