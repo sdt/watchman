@@ -6,7 +6,7 @@ use warnings;
 # ABSTRACT: email sender
 # VERSION
 
-use Email::Sender::Simple;
+use Email::Sender::Simple 0.120002;
 use Email::Simple;
 use Log::Any qw( $log );
 use Sys::Hostname;
