@@ -6,15 +6,15 @@ use warnings;
 # ABSTRACT: watch for interesting posts and notify about them
 # VERSION
 
-use List::Util qw( max );
-
 use App::Watchman::Config;
+use App::Watchman::EmailFormatter;
 use App::Watchman::Mailer;
 use App::Watchman::NZBMatrix;
 use App::Watchman::Schema;
 use App::Watchman::TMDB;
+
+use List::Util qw( max );
 use Log::Any qw( $log );
-use URI::Escape;
 use Try::Tiny;
 
 use Method::Signatures;
@@ -48,7 +48,8 @@ method run {
     $self->_run_searches($stash, $searchlist);
 
     if (%$stash) {
-        $self->mailer->send(body => $self->_format_email($stash));
+        $self->mailer->send(body =>
+            App::Watchman::EmailFormatter::format_email($stash));
     }
 
     $log->info($self->nzbmatrix->searches_remaining, ' searches remaining');
@@ -129,77 +130,6 @@ method _run_searches($stash, $searchlist) {
     }
 
     $stash->{search_hits} = \@new_hits if @new_hits;
-}
-
-method _format_email($stash) {
-
-    my $body = '';
-
-    $body .= format_movie_list($stash->{added},
-        '++', 'New movies added');
-    $body .= format_movie_list($stash->{reactivated},
-        '-+', 'Old movies reactivated');
-    $body .= format_movie_list($stash->{deactivated},
-        '--', 'Movies deactivated');
-
-    if ($stash->{search_hits}) {
-        $body .= "New search results\n\n";
-        for my $hit (@{ $stash->{search_hits} }) {
-
-            $body .= format_search_query($hit->{movie});
-            for my $result (@{ $hit->{results} }) {
-                $body .= format_search_result($result);
-            }
-
-            $body .= "\n";
-        }
-    }
-
-    if ($stash->{search_hits}) {
-        $body .= "Errors occurred\n\n";
-
-        for my $error (@{ $stash->{errors} }) {
-            $body .= format_error($error);
-        }
-        $body .= "\n";
-    }
-
-    return $body;
-}
-
-func format_movie_list ($list, $prefix, $msg) {
-    return '' unless $list;
-
-    my $text = "$msg\n\n";
-    for my $movie (@$list) {
-        $text .= format_movie_info($prefix, $movie);
-    }
-    $text .= "\n\n";
-    return $text;
-}
-
-func format_movie_info ($prefix, $movie) {
-    return sprintf("$prefix %s (%d) http://www.themoviedb.org/movie/%d\n",
-        $movie->{title}, $movie->{year}, $movie->{tmdb_id}
-    );
-}
-
-func format_search_query ($movie) {
-    return sprintf(
-        "** %s (%d) http://nzbmatrix.com/nzb-search.php?search=%s\n",
-        $movie->title, $movie->year,
-        uri_escape($movie->title . ' ' . $movie->year),
-    );
-}
-
-func format_search_result ($result) {
-    return sprintf("\t* %s http://%s\n",
-        $result->{nzbname}, $result->{link}
-    );
-}
-
-func format_error ($error) {
-    return sprintf("\t* %s\n", $error);
 }
 
 # Builder methods
