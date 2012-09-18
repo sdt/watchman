@@ -3,6 +3,7 @@ package App::Watchman::Schema::Result::Movie;
 use 5.12.0;
 use warnings;
 
+# ABSTRACT: Movie result class
 # VERSION
 
 use base 'DBIx::Class::Core';

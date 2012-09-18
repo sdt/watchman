@@ -3,6 +3,7 @@ package App::Watchman::Schema::ResultSet::Movie;
 use 5.12.0;
 use warnings;
 
+# ABSTRACT: Movie resultset class
 # VERSION
 
 use base 'App::Watchman::Schema::ResultSet';

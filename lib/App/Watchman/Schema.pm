@@ -3,6 +3,7 @@ package App::Watchman::Schema;
 use 5.12.0;
 use warnings;
 
+# ABSTRACT: DBIC Schema class
 # VERSION
 
 use Log::Any qw( $log );
