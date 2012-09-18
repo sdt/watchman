@@ -65,7 +65,7 @@ my $wm = App::Watchman->new(
 my @movies = movies(4);
 my %tmdbs = map { $_->{tmdb_id} => $_ } @movies;
 my %nzbs  = map { $_->{tmdb_id} => [ results($_, 4) ] } @movies;
-my @keys = keys $movies[0];
+my @keys = keys %{ $movies[0] };
 my $stash;
 my $age = 1000;
 
