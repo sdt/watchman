@@ -124,7 +124,7 @@ method _run_searches($stash, $searchlist) {
                 results => $results,
             });
 
-            $log->info(scalar $results, " new hits for $title");
+            $log->info(scalar @$results, " new hits for $title");
         }
 
         $movie->update({ last_searched => $now });
