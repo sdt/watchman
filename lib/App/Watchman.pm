@@ -33,7 +33,6 @@ has search_min_age => (
 );
 
 method movies {
-    #TODO: is this necessary, can run keep the same resultset?
     return $self->schema->resultset('Movie');
 }
 
@@ -71,14 +70,16 @@ method _update_watchlist($stash, $watchlist) {
     # Ask TMDB for the current watchlist
     $log->info(scalar @$watchlist, ' items in watchlist');
 
+    my $movies_rs = $self->movies;
+
     my %seen;
-    my $deactivated = $self->movies->deactivated(@$watchlist);
+    my $deactivated = $movies_rs->deactivated(@$watchlist);
     if ($deactivated->count > 0) {
         $stash->{deactivated} = [ $deactivated->sorted->as_hashes->all ];
         $deactivated->update({ active => 0 });
     }
 
-    my $reactivated = $self->movies->reactivated(@$watchlist);
+    my $reactivated = $movies_rs->reactivated(@$watchlist);
     if ($reactivated->count > 0) {
         $stash->{reactivated} = [ $reactivated->sorted->as_hashes->all ];
         $reactivated->update({ active => 1 });
@@ -86,10 +87,10 @@ method _update_watchlist($stash, $watchlist) {
 
     my @added;
     for my $id (@$watchlist) {
-        next if $self->movies->find({ tmdb_id => $id });
+        next if $movies_rs->find({ tmdb_id => $id });
 
         my $movie = $self->tmdb->get_movie_info($id);
-        $self->movies->create($movie);
+        $movies_rs->create($movie);
         push(@added, $movie);
     }
 

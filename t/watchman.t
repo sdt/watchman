@@ -178,6 +178,21 @@ like($stash->{errors}->[0], qr/watchlist failed/, 'One search failure');
 delete $stash->{errors};
 eq_or_diff($stash, { }, 'no extras in stash');
 
+#------------------------------------------------------------------------------
+note 'Test run itself';
+$tmdb->stuff([ 3, 4 ]);
+$nzbmatrix->stuff([ $nzbs{2}->[0] ], [ $nzbs{3}->[0], $nzbs{3}->[1] ]);
+
+is(emails()->delivery_count, 0, 'No emails yet');
+$wm->run;
+
+is(emails()->delivery_count, 1, 'One email sent');
+my $msg = next_email();
+is(count_occurances($msg->get_body, qr/--/), 2, 'Two movies disabled');
+is(count_occurances($msg->get_body, qr/\*\*/), 3, 'Three search hits');
+is($msg->get_header('to'), $config->{email}->{to}, 'To: is correct');
+is($msg->get_header('from'), $config->{email}->{to}, 'From: is correct');
+
 done_testing();
 #------------------------------------------------------------------------------
 
