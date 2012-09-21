@@ -3,6 +3,8 @@
 use 5.12.0;
 use warnings;
 
+use Data::Dumper::Concise;
+use Text::CSV::Slurp;
 use WWW::Mechanize;
 
 my $mech = WWW::Mechanize->new;
@@ -16,4 +18,6 @@ $mech->submit_form(with_fields => {
 
 $mech->get('http://www.imdb.com/list/watchlist');
 $mech->follow_link(text => 'Export this list');
-print $mech->content;
+
+my $data = Text::CSV::Slurp->load(string => $mech->content);
+print Dumper($data);
