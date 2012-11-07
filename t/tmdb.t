@@ -11,45 +11,66 @@ use App::Watchman::TMDB;
 
 # Stripped down version of the json data returned by tmdb
 # Sufficient for our purposes
-my @responses = (
+my @watchlist_responses = (
     {
         page => 1,
-        results => [ { id => 73 }, { id => 180 }, { id => 807 } ],
-        total_pages => 1,
-        total_results => 3
+        results => [ { id => 73 }, { id => 180 }, { id => 666 } ],
+        total_pages => 2,
+        total_results => 4,
     },
     {
-        title => "American History X",
+        page => 2,
+        results => [ { id => 807 }, ],
+        total_pages => 2,
+        total_results => 4,
+    },
+);
+
+my @info_responses = (
+    {
+        title => "Title 73",
         id => 73,
         release_date => "1977-12-27",
     },
     {
-        title => "Minority Report",
+        title => "Title 180",
         id => 180,
         release_date => "1927-12-27",
     },
     {
-        title => "Se7en",
+        title => "Title 666",
+        id => 666,
+        release_date => "1955-12-27",
+    },
+    {
+        title => "Title 807",
         id => 807,
         release_date => "1998-12-27",
     },
 );
 
 
-my $ua = Test::Mock::UserAgent->new( make_responses(@responses) );
+my $ua = Test::Mock::UserAgent->new( make_responses(@watchlist_responses) );
 
 my $tmdb = App::Watchman::TMDB->new(
     ua => $ua, session_id => 'testing', user_id => 'testing',
 );
 
 my $watchlist = $tmdb->get_watchlist;
-eq_or_diff($watchlist, [ map { $_->{id} } @{ $responses[0]->{results} } ],
+eq_or_diff($watchlist, [ map { $_->{id} } @info_responses ],
     'Watchlist as expected');
 
-my $num_results = scalar @responses - 1;
-for my $i (1 .. $num_results) {
+is(scalar @$ua, 0, 'All pages fetched');
+
+# We expect that the watchlist will have been consumed at this point, but lets
+# resync here anyway in case it hasn't.
+$ua->set_results(make_responses(@info_responses));
+
+for my $i (0 .. $#info_responses) {
     my $info = $tmdb->get_movie_info($watchlist->[$i-1]);
-    my $expected = $responses[$i];
+    my $expected = $info_responses[$i];
+
+    isnt($info, undef, "Got info for movie $i");
 
     is($info->{title}, $expected->{title}, "Title $i is ok");
     is($info->{tmdb_id}, $expected->{id}, "TMDB ID $i is ok");

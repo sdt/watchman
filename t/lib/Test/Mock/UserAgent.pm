@@ -7,6 +7,7 @@ use Method::Signatures;
 
 method new ($class:, @res)  { bless [ @res ], $class }
 method add_results (@res)   { push(@$self, @res) }
+method set_results (@res)   { @$self = @res }
 method request ($req)       { shift(@$self) }
 method get ($req)           { shift(@$self) }
 
