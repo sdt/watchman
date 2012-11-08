@@ -37,12 +37,20 @@ method _build_ua {
 
 method get_watchlist {
     $log->info('Fetching watchlist from TMDB');
-    my $results = $self->api->send_api(
-        [ account => $self->user_id, 'movie_watchlist' ],
-        { session_id => 1 }, { session_id => $self->session_id }
-    );
 
-    return [ sort { $a <=> $b } map { $_->{id} } @{ $results->{results} } ];
+    my @ids;
+    for (my $page = 1; ; $page++) {
+        my $results = $self->api->send_api(
+            [ account => $self->user_id, 'movie_watchlist' ],
+            { session_id => 1, page => 0 },
+            { page => $page, session_id => $self->session_id }
+        );
+
+        push(@ids, map { $_->{id} } @{ $results->{results} });
+        last if $results->{page} == $results->{total_pages};
+    }
+
+    return [ sort { $a <=> $b } @ids ];
 }
 
 method get_movie_info ($tmdb_id) {
