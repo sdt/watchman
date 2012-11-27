@@ -42,6 +42,10 @@ method search ($title) {
     die 'NZBMatrix api rate limit exceeded'
         if $self->searches_remaining < 10;
 
+    # Been missing hits due to apostrophes. Trim the search down to just
+    # alphanumeric and space.
+    $title =~ tr/A-Za-z0-9 //cd;
+
     my $uri = URI->new('http://api.nzbmatrix.com/v1.1/search.php');
     $uri->query_form(
         username => $self->username,
