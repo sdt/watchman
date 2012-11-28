@@ -77,6 +77,15 @@ method search ($title) {
     return \@filtered_results;
 }
 
+func search_uri ($title) {
+    my $uri = URI->new('http://nzbmatrix.com/nzb-search.php');
+    $uri->query_form(
+        search => _normalise_title($title),
+        cat    => 'movies-all',
+    );
+    return $uri;
+}
+
 func _normalise_title ($title) {
     # Been missing hits due to apostrophes. Trim the search down to just
     # alphanumeric and space.

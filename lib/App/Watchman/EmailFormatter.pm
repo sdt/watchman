@@ -28,7 +28,7 @@ my $template = <<'END_TEMPLATE';
     SET movie=result.movie;
     SET search="$movie.title $movie.year";
     "New search hits for $movie.title ($movie.year)";
-    " http://nzbmatrix.com/nzb-search.php?search=$search.uri_escape\n";
+    " $movie.nzbmatrix_uri\n";
     FOR hit IN result.results;
       " ** $hit.nzbname http://$hit.link\n";
     END;

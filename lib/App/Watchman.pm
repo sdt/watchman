@@ -47,6 +47,7 @@ method run {
     $self->_run_searches($stash, $searchlist);
 
     if (%$stash) {
+        _augment_stash($stash);
         $self->mailer->send(body =>
             App::Watchman::EmailFormatter::format_email($stash));
     }
@@ -120,7 +121,7 @@ method _run_searches($stash, $searchlist) {
         if (@$results) {
             $movie->set_column(last_nzbid => max map { $_->{nzbid} } @$results);
             push(@new_hits, {
-                movie => $movie,
+                movie => { $movie->get_columns },
                 results => $results,
             });
 
@@ -131,6 +132,24 @@ method _run_searches($stash, $searchlist) {
     }
 
     $stash->{search_hits} = \@new_hits if @new_hits;
+}
+
+func _augment_stash ($stash) {
+    for (qw( added deactivated reactivated )) {
+        for my $movie (@{ $stash->{$_} // [] }) {
+            _augment_movie($movie);
+        }
+    }
+
+    for (@{ $stash->{search_hits} // []}) {
+        _augment_movie($_->{movie});
+    }
+}
+
+func _augment_movie ($movie) {
+    $movie->{nzbmatrix_uri} = App::Watchman::NZBMatrix::search_uri(
+            $movie->{title} . ' ' . $movie->{year}
+        );
 }
 
 # Builder methods
