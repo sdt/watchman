@@ -42,15 +42,11 @@ method search ($title) {
     die 'NZBMatrix api rate limit exceeded'
         if $self->searches_remaining < 10;
 
-    # Been missing hits due to apostrophes. Trim the search down to just
-    # alphanumeric and space.
-    $title =~ tr/A-Za-z0-9 //cd;
-
     my $uri = URI->new('http://api.nzbmatrix.com/v1.1/search.php');
     $uri->query_form(
         username => $self->username,
         apikey   => $self->apikey,
-        search   => $title,
+        search   =>  _normalise_title($title),
         num      => 50,
     );
     my $response = $self->ua->get($uri);
@@ -79,6 +75,13 @@ method search ($title) {
 
     $log->info('Found ', scalar @filtered_results, ' filtered results');
     return \@filtered_results;
+}
+
+func _normalise_title ($title) {
+    # Been missing hits due to apostrophes. Trim the search down to just
+    # alphanumeric and space.
+    $title =~ tr/A-Za-z0-9 //cd;
+    return $title;
 }
 
 func _decode ($data) {
