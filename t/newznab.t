@@ -12,20 +12,15 @@ use App::Watchman::Newznab;
 
 my $good_data = { channel => { item => [
     {
-        title => 'Movie 1',
-        guid => 'http://site.com/1/',
+        title => 'Movie 2',
+        guid => 'http://site.com/2/',
         pubDate => 'Fri, 16 Nov 2012 17:03:58 +0000',
     },
     {
-        title => 'Movie 2',
-        guid => 'http://site.com/2/',
+        title => 'Movie 1',
+        guid => 'http://site.com/1/',
         pubDate => 'Sun, 18 Nov 2012 17:03:58 +0000',
     },
-#    {
-#        title => 'Movie 3',
-#        guid => 'http://site.com/3/',
-#        pubDate => 'Sat, 17 Nov 2012 17:03:58 +0000',
-#    },
 ]}};
 
 my $ua = Test::Mock::UserAgent->new;
