@@ -23,11 +23,18 @@ my $good_data = { channel => { item => [
     },
 ]}};
 
+my $single_data = { channel => { item =>
+    {
+        title => 'Movie 3',
+        guid => 'http://site.com/3/',
+        pubDate => 'Sat, 17 Nov 2012 17:03:58 +0000',
+    },
+}};
+
 my $ua = Test::Mock::UserAgent->new;
 my $tmdb = App::Watchman::Newznab->new(
     ua => $ua, apikey => 'testing', base_uri => 'http://test.test',
 );
-my $searches_remaining = 55;
 
 note 'Check good data';
 $ua->add_results( make_responses($good_data) );
@@ -40,6 +47,14 @@ eq_or_diff([ map { $_->{name} } @$results ],
            [ map { "Movie $_" } (1 .. 2) ], 'Names match');
 eq_or_diff([ map { $_->{link} } @$results ],
            [ map { "http://site.com/$_/" } (1 .. 2) ], 'Links match');
+
+note 'Check single search result';
+$ua->add_results( make_responses($single_data) );
+$results = $tmdb->search('xxx');
+
+is(scalar @$results, 1, 'One search result');
+is($results->[0]->{name}, 'Movie 3', 'Name matches');
+is($results->[0]->{link}, 'http://site.com/3/', 'Link matches');
 
 note 'Check no results';
 $ua->add_results( make_responses({}) );
