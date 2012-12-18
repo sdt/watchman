@@ -84,7 +84,7 @@ func _decode ($json) {
         });
     }
 
-    return @results;
+    return reverse sort { $a->{date} <=> $b->{date} } @results;
 }
 
 func _parse_date($datestr) {
