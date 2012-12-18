@@ -76,7 +76,7 @@ func _decode ($json) {
     my @results;
 
     my $data = decode_json($json);
-    for my $item (@{ $data->{channel}->{item} }) {
+    for my $item (@{ $data->{channel}->{item} // []}) {
         push(@results, {
             name => $item->{title},
             link => $item->{guid},
