@@ -61,7 +61,7 @@ sub movies {
 sub search_hit {
     my ($movieid, $nzbid) = @_;
     return {
-        nzbname => "movie$movieid nzb$nzbid",
+        name => "movie$movieid nzb$nzbid",
         link => "link.to/$nzbid",
     };
 }
@@ -107,7 +107,7 @@ sub check_search_hits {
                 "Message contains $key message '$movie->{$field}'");
         }
         for my $hit (@{ $result->{results} }) {
-            for my $field (qw( nzbname link )) {
+            for my $field (qw( name link )) {
                 $TB->like($message, qr/\Q$prefix\E.*\Q$hit->{$field}\E/,
                     "Message contains $field '$hit->{$field}'");
             }
