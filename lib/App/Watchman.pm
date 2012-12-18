@@ -9,7 +9,7 @@ use warnings;
 use App::Watchman::Config;
 use App::Watchman::EmailFormatter;
 use App::Watchman::Mailer;
-use App::Watchman::NZBMatrix;
+use App::Watchman::Newznab;
 use App::Watchman::Schema;
 use App::Watchman::TMDB;
 
@@ -21,7 +21,7 @@ use Method::Signatures;
 use Moose;
 use namespace::autoclean;
 
-has [qw( config mailer schema tmdb nzbmatrix )] => (
+has [qw( config mailer newznab schema tmdb )] => (
     is => 'ro',
     lazy_build => 1,
 );
@@ -47,12 +47,10 @@ method run {
     $self->_run_searches($stash, $searchlist);
 
     if (%$stash) {
-        _augment_stash($stash);
+        $self->_augment_stash($stash);
         $self->mailer->send(body =>
             App::Watchman::EmailFormatter::format_email($stash));
     }
-
-    $log->info($self->nzbmatrix->searches_remaining, ' searches remaining');
 }
 
 method _fetch_watchlist($stash) {
@@ -110,16 +108,17 @@ method _run_searches($stash, $searchlist) {
         my $title = $movie->title . ' ' . $movie->year;
         my $results;
         try {
-            $results = $self->nzbmatrix->search($title);
+            $results = $self->newznab->search($title);
         }
         catch {
             push(@{ $stash->{errors} }, "NZBMatrix search '$title' failed: $_");
         };
         next unless $results;
 
-        @$results = grep { $_->{nzbid} > $movie->last_nzbid } @$results;
+        @$results = grep { $_->{date} > $movie->last_nzbdate } @$results;
         if (@$results) {
-            $movie->set_column(last_nzbid => max map { $_->{nzbid} } @$results);
+            $movie->set_column(last_nzbdate
+                => max map { $_->{date} } @$results);
             push(@new_hits, {
                 movie => { $movie->get_columns },
                 results => $results,
@@ -134,20 +133,20 @@ method _run_searches($stash, $searchlist) {
     $stash->{search_hits} = \@new_hits if @new_hits;
 }
 
-func _augment_stash ($stash) {
+method _augment_stash ($stash) {
     for (qw( added deactivated reactivated )) {
         for my $movie (@{ $stash->{$_} // [] }) {
-            _augment_movie($movie);
+            $self->_augment_movie($movie);
         }
     }
 
     for (@{ $stash->{search_hits} // []}) {
-        _augment_movie($_->{movie});
+        $self->_augment_movie($_->{movie});
     }
 }
 
-func _augment_movie ($movie) {
-    $movie->{nzbmatrix_uri} = App::Watchman::NZBMatrix::search_uri(
+method _augment_movie ($movie) {
+    $movie->{nzbmatrix_uri} = $self->newznab->search_uri(
             $movie->{title} . ' ' . $movie->{year}
         );
 }
@@ -166,11 +165,11 @@ method _build_mailer {
     );
 }
 
-method _build_nzbmatrix {
-    my $cfg = $self->config->{nzbmatrix};
-    return App::Watchman::NZBMatrix->new(
+method _build_newznab {
+    my $cfg = $self->config->{newznab};
+    return App::Watchman::Newznab->new(
         apikey      => $cfg->{apikey},
-        username    => $cfg->{user},
+        base_uri    => $cfg->{base_uri},
     );
 }
 

@@ -18,7 +18,7 @@ __PACKAGE__->add_columns(
         { data_type => 'integer', is_nullable => 0 },
     last_searched =>
         { data_type => 'integer', is_nullable => 0, default_value => 0, },
-    last_nzbid =>
+    last_nzbdate =>
         { data_type => 'integer', is_nullable => 0, default_value => 0, },
     active =>
         { data_type => 'boolean', is_nullable => 0, default_value => 1, },
