@@ -76,7 +76,9 @@ func _decode ($json) {
     my @results;
 
     my $data = decode_json($json);
-    for my $item (@{ $data->{channel}->{item} // []}) {
+    my $items = $data->{channel}->{item} // [];
+    $items = [ $items ] unless ref $items eq 'ARRAY';
+    for my $item (@$items) {
         push(@results, {
             name => $item->{title},
             link => $item->{guid},
