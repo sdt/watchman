@@ -25,13 +25,12 @@ Time::Fake->offset($timenow);
 }
 
 {
-    package Local::Mock::NZBMatrix;
+    package Local::Mock::Newznab;
     use base 'Local::Mock::Base';
     use Method::Signatures;
 
-    method new($class:)         { $class->SUPER::new( rem => 100 ) }
-    method search($term)        { $self->{rem}--; $self->get // [ ] }
-    method searches_remaining   { $self->{rem} }
+    method search($term)        { $self->get // [ ] }
+    method search_uri($term)    { "http://search/$term" }
 }
 
 {
@@ -49,16 +48,13 @@ Time::Fake->offset($timenow);
 
 use App::Watchman;
 
-my $config    = { dbfile => ':memory:', email => { to => 'me@example.com' } };
-my $nzbmatrix = Local::Mock::NZBMatrix->new;
-my $tmdb      = Local::Mock::TMDB->new;
-my $searches  = 100;
-
-is($nzbmatrix->searches_remaining, $searches, "$searches searches remaining");
+my $config  = { dbfile => ':memory:', email => { to => 'me@example.com' } };
+my $newznab = Local::Mock::Newznab->new;
+my $tmdb    = Local::Mock::TMDB->new;
 
 my $wm = App::Watchman->new(
     config    => $config,
-    nzbmatrix => $nzbmatrix,
+    newznab => $newznab,
     tmdb      => $tmdb,
 );
 
@@ -108,11 +104,10 @@ eq_or_diff([ searchlist_ids($wm) ], [ 1 .. 4, ], 'searchlist contains 1 .. 4');
 
 #------------------------------------------------------------------------------
 note 'Update searchlist for one movie';
-$nzbmatrix->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
+$newznab->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
 
 $wm->_run_searches($stash = {}, $wm->movies->search_rs({ tmdb_id => 1 }));
 
-searches_made_is(1);
 is(@{ $stash->{search_hits} }, 1, '1 movie with search hits');
 is(@{ $stash->{search_hits}->[0]->{results} }, 2, '2 search hits');
 delete $stash->{search_hits};
@@ -120,20 +115,18 @@ eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
 note 'Re-run search with no extra hits';
-$nzbmatrix->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
+$newznab->stuff([ $nzbs{1}->[0], $nzbs{1}->[1] ]);
 
 $wm->_run_searches($stash = {}, $wm->movies->search_rs({ tmdb_id => 1 }));
-searches_made_is(1);
 eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
 note 'Update searchlist with two movies';
-$nzbmatrix->stuff([ $nzbs{1}->[2] ], [ $nzbs{2}->[0], $nzbs{2}->[1] ]);
+$newznab->stuff([ $nzbs{1}->[2] ], [ $nzbs{2}->[0], $nzbs{2}->[1] ]);
 
 $wm->_run_searches($stash = {}, $wm->movies->search_rs(
     { tmdb_id => { -in => [ 1, 2 ] } }, { order_by => 'tmdb_id' }));
 
-searches_made_is(2);
 is(@{ $stash->{search_hits} }, 2, '2 movies with search hits');
 is(@{ $stash->{search_hits}->[0]->{results} }, 1, '1 search hit for movie 1');
 is(@{ $stash->{search_hits}->[1]->{results} }, 2, '2 search hits for movie 2');
@@ -142,13 +135,12 @@ eq_or_diff($stash, { }, 'no extras in stash');
 
 #------------------------------------------------------------------------------
 note 'First search fails';
-$nzbmatrix->stuff([ $nzbs{2}->[2] ]);
-$nzbmatrix->die_next;
+$newznab->stuff([ $nzbs{2}->[2] ]);
+$newznab->die_next;
 
 $wm->_run_searches($stash = {}, $wm->movies->search_rs(
     { tmdb_id => { -in => [ 1, 2 ] } }, { order_by => 'tmdb_id' }));
 
-searches_made_is(2);
 is(@{ $stash->{search_hits} }, 1, '1 movies with search hits');
 is(@{ $stash->{search_hits}->[0]->{results} }, 1, '1 search hit for movie 2');
 delete $stash->{search_hits};
@@ -181,7 +173,7 @@ eq_or_diff($stash, { }, 'no extras in stash');
 #------------------------------------------------------------------------------
 note 'Test run itself';
 $tmdb->stuff([ 3, 4 ]);
-$nzbmatrix->stuff([ $nzbs{2}->[0] ], [ $nzbs{3}->[0], $nzbs{3}->[1] ]);
+$newznab->stuff([ $nzbs{2}->[0] ], [ $nzbs{3}->[0], $nzbs{3}->[1] ]);
 
 is(emails()->delivery_count, 0, 'No emails yet');
 $wm->run;
@@ -205,15 +197,6 @@ sub movie_hashes {
     my ($movies) = @_;
     my @keys = qw( title year tmdb_id );
     return [ map { subhashref($_, \@keys) } @$movies ];
-}
-
-sub searches_made_is {
-    my ($num_searches) = @_;
-    my $msg = $num_searches == 1 ? 'search was' : 'searches were';
-    my $new_searches = $nzbmatrix->searches_remaining;
-    $TB->is_num($searches - $new_searches, $num_searches,
-        "$num_searches $msg performed");
-    $searches = $new_searches;
 }
 
 sub count_occurances {
@@ -241,9 +224,9 @@ sub result {
     state $next_nzbid = 1;
     my $id = $next_nzbid++;
     return {
-        nzbid   => $id,
-        nzbname => sprintf("%s (%d) %d", $movie->{title}, $movie->{year}, $id),
-        link    => "link.to/$id",
+        name => sprintf("%s (%d) %d", $movie->{title}, $movie->{year}, $id),
+        link => "link.to/$id",
+        date => 12345 + $id,
     };
 }
 
