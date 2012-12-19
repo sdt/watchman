@@ -62,7 +62,7 @@ sub search_hit {
     my ($movieid, $nzbid) = @_;
     return {
         name => "movie$movieid nzb$nzbid",
-        link => "link.to/$nzbid",
+        link => "http://link.to/$nzbid",
     };
 }
 

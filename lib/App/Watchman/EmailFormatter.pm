@@ -30,7 +30,7 @@ my $template = <<'END_TEMPLATE';
     "New search hits for $movie.title ($movie.year)";
     " $movie.nzbmatrix_uri\n";
     FOR hit IN result.results;
-      " ** $hit.name http://$hit.link\n";
+      " ** $hit.name $hit.link\n";
     END;
   END;
 -%]
