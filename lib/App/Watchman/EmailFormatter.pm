@@ -7,6 +7,7 @@ use warnings;
 # VERSION
 
 use Log::Any qw( $log );
+use Number::Bytes::Human qw(format_bytes);
 use URI::Escape;
 use Template;
 
@@ -30,7 +31,7 @@ my $template = <<'END_TEMPLATE';
     "New search hits for $movie.title ($movie.year)";
     " $movie.nzbmatrix_uri\n";
     FOR hit IN result.results;
-      " ** $hit.name $hit.link\n";
+      " ** $hit.name ($hit.size.bytes) $hit.link\n";
     END;
   END;
 -%]
@@ -57,6 +58,9 @@ END_TEMPLATE
 func format_email($stash) {
     my $tt = Template->new;
     $tt->context->define_vmethod(scalar => uri_escape => \&uri_escape);
+    $tt->context->define_vmethod(scalar => bytes => sub {
+        format_bytes($_[0]) . 'b'
+    });
 
     my $message;
     $tt->process(\$template, $stash, \$message)

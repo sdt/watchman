@@ -83,6 +83,7 @@ func _decode ($json) {
             name => $item->{title},
             link => $item->{guid},
             date => _parse_date($item->{pubDate}),
+            size => $item->{enclosure}->{'@attributes'}->{length},
         });
     }
 
