@@ -21,15 +21,9 @@ use Method::Signatures;
 use Moose;
 use namespace::autoclean;
 
-has [qw( config mailer newznab schema tmdb )] => (
+has [qw( config mailer newznab schema tmdb search_min_age )] => (
     is => 'ro',
     lazy_build => 1,
-);
-
-has search_min_age => (
-    is => 'ro',
-    isa => 'Int',
-    default => 24 * 60 * 60,
 );
 
 method movies {
@@ -152,6 +146,11 @@ method _augment_movie ($movie) {
 }
 
 # Builder methods
+
+method _build_search_min_age {
+    my $cfg = $self->config;
+    return ( $cfg->{search_min_hours} // 24 ) * 60 * 60;
+}
 
 method _build_config {
     return App::Watchman::Config->load();
