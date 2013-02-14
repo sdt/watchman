@@ -66,9 +66,12 @@ method search_uri ($title) {
 }
 
 func _normalise_title ($title) {
-    # Been missing hits due to apostrophes. Trim the search down to just
-    # alphanumeric and space.
-    $title =~ tr/A-Za-z0-9 //cd;
+    # Been missing hits due to apostrophes, get rid of them!
+    $title =~ tr/'//d;
+
+    # Happened upon this char which isn't working well for me, but works
+    # fine as a regular 'a'.
+    $title =~ s/à/a/g;  # tr/à/a/ converts à to aa ?
     return $title;
 }
 
