@@ -140,7 +140,7 @@ method _augment_stash ($stash) {
 }
 
 method _augment_movie ($movie) {
-    $movie->{nzbmatrix_uri} = $self->newznab->search_uri(
+    $movie->{nzbsearch_uri} = $self->newznab->search_uri(
             $movie->{title} . ' ' . $movie->{year}
         );
 }

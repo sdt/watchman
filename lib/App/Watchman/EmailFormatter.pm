@@ -29,7 +29,7 @@ my $template = <<'END_TEMPLATE';
     SET movie=result.movie;
     SET search="$movie.title $movie.year";
     "New search hits for $movie.title ($movie.year)";
-    " $movie.nzbmatrix_uri\n";
+    " $movie.nzbsearch_uri\n";
     FOR hit IN result.results;
       " ** $hit.name ($hit.size.bytes) $hit.link\n";
     END;
