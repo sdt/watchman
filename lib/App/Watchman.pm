@@ -105,7 +105,7 @@ method _run_searches($stash, $searchlist) {
             $results = $self->newznab->search($title);
         }
         catch {
-            push(@{ $stash->{errors} }, "NZBMatrix search '$title' failed: $_");
+            push(@{ $stash->{errors} }, "NZB search '$title' failed: $_");
         };
         next unless $results;
 
