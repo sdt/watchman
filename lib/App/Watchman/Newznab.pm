@@ -14,7 +14,8 @@ use LWP::UserAgent;
 use URI;
 
 use Method::Signatures;
-use Moose;
+use Moo;
+use MooX::Types::MooseLike::Base qw( Str );
 use namespace::autoclean;
 
 my $datetime_parser = new DateTime::Format::Strptime(
@@ -26,13 +27,12 @@ my $datetime_parser = new DateTime::Format::Strptime(
 
 has [qw( base_uri apikey )] => (
     is => 'ro',
-    isa => 'Str',
+    isa => Str,
     required => 1,
 );
 
-has [qw( ua )] => (
-    is => 'ro',
-    lazy_build => 1,
+has ua => (
+    is => 'lazy',
 );
 
 method _build_ua {
@@ -97,5 +97,4 @@ func _parse_date($datestr) {
     return $datetime_parser->parse_datetime($datestr)->epoch();
 }
 
-__PACKAGE__->meta->make_immutable;
 1;

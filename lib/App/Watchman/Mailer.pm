@@ -12,8 +12,8 @@ use Log::Any qw( $log );
 use Sys::Hostname;
 
 use Method::Signatures;
-use Moose;
-use MooseX::Types::Email qw( EmailAddress );
+use Moo;
+use MooX::Types::MooseLike::Email qw( EmailAddress );
 use namespace::autoclean;
 
 has [qw( to from )] => (
@@ -39,5 +39,4 @@ method send (:$subject = $default_subject, :$body) {
     $log->info('Email sent');
 }
 
-__PACKAGE__->meta->make_immutable;
 1;

@@ -11,20 +11,20 @@ use LWP::UserAgent;
 use WWW::TMDB::API;
 
 use Method::Signatures;
-use Moose;
+use Moo;
+use MooX::Types::MooseLike::Base qw( Str );
 use namespace::autoclean;
 
 my $api_key = 'd83ccf1c8c6ca49a86fe647198323b38';
 
 has [qw( user_id session_id )] => (
     is => 'ro',
-    isa => 'Str',
+    isa => Str,
     required => 1,
 );
 
 has [qw( api ua )] => (
-    is => 'ro',
-    lazy_build => 1,
+    is => 'lazy',
 );
 
 method _build_api {
@@ -63,5 +63,4 @@ method get_movie_info ($tmdb_id) {
     };
 }
 
-__PACKAGE__->meta->make_immutable;
 1;

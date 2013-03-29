@@ -18,12 +18,11 @@ use Log::Any qw( $log );
 use Try::Tiny;
 
 use Method::Signatures;
-use Moose;
+use Moo;
 use namespace::autoclean;
 
 has [qw( config mailer newznab schema tmdb search_min_age )] => (
-    is => 'ro',
-    lazy_build => 1,
+    is => 'lazy',
 );
 
 method movies {
@@ -187,7 +186,6 @@ method _build_tmdb {
     );
 }
 
-__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
