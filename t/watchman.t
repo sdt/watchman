@@ -1,8 +1,10 @@
 use 5.12.0;
 use warnings;
 use Test::Most;
+use Test::FailWarnings;
 use Time::Fake;
 use Test::Builder;
+use Email::Sender::Simple;
 
 my $TB = Test::Builder->new;
 
@@ -49,13 +51,16 @@ Time::Fake->offset($timenow);
 
 use App::Watchman;
 
-my $config  = { dbfile => ':memory:', email => { to => 'me@example.com' } };
+my $config  = {
+    schema => { dbfile => ':memory:'   },
+    mailer => { to => 'me@example.com', from => 'me@example.com' },
+};
 my $newznab = Local::Mock::Newznab->new;
 my $tmdb    = Local::Mock::TMDB->new;
 
 my $wm = App::Watchman->new(
     config    => $config,
-    newznab => $newznab,
+    newznab   => $newznab,
     tmdb      => $tmdb,
 );
 
@@ -183,8 +188,8 @@ is(emails()->delivery_count, 1, 'One email sent');
 my $msg = next_email();
 is(count_occurances($msg->get_body, qr/--/), 2, 'Two movies disabled');
 is(count_occurances($msg->get_body, qr/\*\*/), 3, 'Three search hits');
-is($msg->get_header('to'), $config->{email}->{to}, 'To: is correct');
-is($msg->get_header('from'), $config->{email}->{to}, 'From: is correct');
+is($msg->get_header('to'), $config->{mailer}->{to}, 'To: is correct');
+is($msg->get_header('from'), $config->{mailer}->{to}, 'From: is correct');
 
 done_testing();
 #------------------------------------------------------------------------------
@@ -241,7 +246,7 @@ sub emails {
 }
 
 sub next_email {
-    Email::Sender::Simple->default_transport->shift_deliveries->{email};
+    emails()->shift_deliveries->{email};
 }
 
 sub add_hours {

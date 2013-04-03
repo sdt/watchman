@@ -8,11 +8,8 @@ use warnings;
 
 use App::Watchman::Config;
 use App::Watchman::EmailFormatter;
-use App::Watchman::Mailer;
-use App::Watchman::Newznab;
-use App::Watchman::Schema;
-use App::Watchman::TMDB;
 
+use Class::Load qw( load_class );
 use List::Util qw( max );
 use Log::Any qw( $log );
 use Try::Tiny;
@@ -21,8 +18,26 @@ use Method::Signatures;
 use Moo;
 use namespace::autoclean;
 
-has [qw( config mailer newznab schema tmdb search_min_age )] => (
+has config => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { App::Watchman::Config->load },
+);
+
+for my $package (qw( Mailer Newznab Schema TMDB)) {
+    my $attr = lc $package;
+    my $class = 'App::Watchman::' . $package;
+    has $attr => (
+        is => 'ro',
+        lazy => 1,
+        default => method { load_class($class)->new($self->config->{$attr}) },
+    );
+}
+
+has search_min_age => (
+    is => 'ro',
     is => 'lazy',
+    default => method { ($self->config->{search_min_hours} // 24 ) * 60 * 60 },
 );
 
 method movies {
@@ -144,48 +159,6 @@ method _augment_movie ($movie) {
         );
 
     $movie->{tmdb_uri} = $self->tmdb->movie_uri($movie->{tmdb_id});
-}
-
-# Builder methods
-
-method _build_search_min_age {
-    my $cfg = $self->config;
-    return ( $cfg->{search_min_hours} // 24 ) * 60 * 60;
-}
-
-method _build_config {
-    return App::Watchman::Config->load();
-}
-
-method _build_mailer {
-    my $cfg = $self->config->{email};
-    return App::Watchman::Mailer->new(
-        to   => $cfg->{to},
-        from => $cfg->{from} // $cfg->{to},
-    );
-}
-
-method _build_newznab {
-    my $cfg = $self->config->{newznab};
-    return App::Watchman::Newznab->new(
-        apikey      => $cfg->{apikey},
-        base_uri    => $cfg->{base_uri},
-    );
-}
-
-method _build_schema {
-    my $cfg = $self->config;
-    return App::Watchman::Schema->new(
-        filename    => $cfg->{dbfile} // 'watchman.db',
-    );
-}
-
-method _build_tmdb {
-    my $cfg = $self->config->{tmdb};
-    return App::Watchman::TMDB->new(
-        session_id => $cfg->{session},
-        user_id    => $cfg->{user},
-    );
 }
 
 1;

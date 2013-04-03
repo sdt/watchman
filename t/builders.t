@@ -9,10 +9,10 @@ use App::Watchman;
 
 my $config_fh = File::Temp->new;
 SaveConfig($config_fh->filename, {
-    email => { to => 'xxx@yyy.zzz' },
-    tmdb => { session => 'xxx', user => 'xxx' },
+    mailer  => { to => 'xxx@yyy.zzz', from => 'xxx@yyy.zzz' },
+    tmdb    => { session_id => 'xxx', user_id => 'xxx' },
     newznab => { apikey => 'xxx', base_uri => 'http://test.com/' },
-    dbname => ':memory:',
+    schema  => { dbfile => ':memory:' },
 });
 $ENV{WATCHMANRC} = $config_fh->filename;
 
