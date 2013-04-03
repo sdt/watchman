@@ -19,8 +19,7 @@ use Moo;
 use namespace::autoclean;
 
 has config => (
-    is => 'ro',
-    lazy => 1,
+    is => 'lazy',
     default => sub { App::Watchman::Config->load },
 );
 
@@ -28,14 +27,12 @@ for my $package (qw( Mailer Newznab Schema TMDB)) {
     my $attr = lc $package;
     my $class = 'App::Watchman::' . $package;
     has $attr => (
-        is => 'ro',
-        lazy => 1,
+        is => 'lazy',
         default => method { load_class($class)->new($self->config->{$attr}) },
     );
 }
 
 has search_min_age => (
-    is => 'ro',
     is => 'lazy',
     default => method { ($self->config->{search_min_hours} // 24 ) * 60 * 60 },
 );

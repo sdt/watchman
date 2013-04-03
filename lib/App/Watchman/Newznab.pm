@@ -33,11 +33,8 @@ has [qw( base_uri apikey )] => (
 
 has ua => (
     is => 'lazy',
+    default => sub { LWP::UserAgent->new },
 );
-
-method _build_ua {
-    LWP::UserAgent->new
-}
 
 method search ($title) {
     $log->info("Searching newznab for [$title]");
