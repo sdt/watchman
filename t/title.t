@@ -1,6 +1,7 @@
 use 5.12.0;
 use warnings;
 use Test::More;
+use Test::FailWarnings;
 
 use App::Watchman::Newznab;
 

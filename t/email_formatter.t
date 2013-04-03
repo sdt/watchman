@@ -1,6 +1,7 @@
 use 5.12.0;
 use warnings;
 use Test::Most;
+use Test::FailWarnings;
 use Test::Builder;
 
 my $TB = Test::Builder->new;

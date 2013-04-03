@@ -1,6 +1,7 @@
 use 5.12.0;
 use warnings;
 use Test::Most;
+use Test::FailWarnings;
 
 use lib 't/lib';
 use Test::Mock::UserAgent;
