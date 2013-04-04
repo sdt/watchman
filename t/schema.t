@@ -11,12 +11,12 @@ note 'Create movies, then indexers'; {
     $schema = App::Watchman::Schema->new(filename => ':memory:');
     for (1 .. 4) {
         rs('Movie')->create(movie($_));
-        eq_or_diff(table('Movie'), [ map { movie_row($_) } (1 .. $_) ],
+        eq_or_diff(table('Movie'), [ movie_rows(1 .. $_) ],
             "Add movie $_" );
     }
     for (1 .. 4) {
         rs('Indexer')->create(indexer($_));
-        eq_or_diff(table('Indexer'), [ map { indexer_row($_) } (1 .. $_) ],
+        eq_or_diff(table('Indexer'), [ indexer_rows(1 .. $_) ],
             "Add indexer $_" );
         is(rs('Scrape')->count, 4 * $_, "Scrapes ok");
     }
@@ -26,12 +26,12 @@ note 'Create indexers, then movies'; {
     $schema = App::Watchman::Schema->new(filename => ':memory:');
     for (1 .. 4) {
         rs('Indexer')->create(indexer($_));
-        eq_or_diff(table('Indexer'), [ map { indexer_row($_) } (1 .. $_) ],
+        eq_or_diff(table('Indexer'), [ indexer_rows(1 .. $_) ],
             "Indexer $_" );
     }
     for (1 .. 4) {
         rs('Movie')->create(movie($_));
-        eq_or_diff(table('Movie'), [ map { movie_row($_) } (1 .. $_) ],
+        eq_or_diff(table('Movie'), [ movie_rows(1 .. $_) ],
             "Add movie $_" );
         is(rs('Scrape')->count, 4 * $_, "Scrapes ok");
     }
@@ -58,29 +58,28 @@ sub movie {
     };
 }
 
-sub movie_row {
-    my ($id) = @_;
-    return {
-        %{ movie($id) },
+sub movie_rows {
+    return map { {
+        %{ movie($_) },
         active => 1,
-    };
+    } } @_;
 }
 
 sub indexer {
     my ($id) = @_;
     return {
+        name     => "Indexer-$_",
         base_uri => "http://search-$id",
         apikey   => "$id$id$id",
     };
 }
 
-sub indexer_row {
-    my ($id) = @_;
-    return {
-        %{ indexer($id) },
-        indexer_id => $id,
+sub indexer_rows {
+    return map { {
+        %{ indexer($_) },
+        indexer_id => $_,
         active => 1,
-    };
+    } } @_;
 }
 
 sub scrapes {

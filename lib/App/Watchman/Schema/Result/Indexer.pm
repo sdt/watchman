@@ -13,6 +13,8 @@ __PACKAGE__->table('indexers');
 __PACKAGE__->add_columns(
     indexer_id =>
         { data_type => 'integer', is_nullable => 0, is_auto_increment => 1 },
+    name =>
+        { data_type => 'text',    is_nullable => 0 },
     base_uri =>
         { data_type => 'text',    is_nullable => 0 },
     apikey =>
@@ -25,6 +27,8 @@ __PACKAGE__->has_many(
     scrapes => 'App::Watchman::Schema::Result::Scrape',
     { 'foreign.indexer_fk' => 'self.indexer_id' },
 );
+__PACKAGE__->add_unique_constraint([qw( name )]);
+__PACKAGE__->add_unique_constraint([qw( base_uri )]);
 
 method insert (@args) {
     my $schema = $self->result_source->schema;
