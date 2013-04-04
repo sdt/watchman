@@ -47,9 +47,11 @@ done_testing;
 sub movie {
     my ($id) = @_;
     return {
-        title   => "movie$id",
-        year    => 1970 + $id,
-        tmdb_id => $id,
+        title         => "movie$id",
+        year          => 1970 + $id,
+        tmdb_id       => $id,
+        nzbsearch_uri => "nzbsearch$id",
+        tmdb_uri      => "tmdb$id",
     };
 }
 

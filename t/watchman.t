@@ -44,6 +44,7 @@ Time::Fake->offset($timenow);
     method get_watchlist()      { $self->_get('wl') }
     method get_movie_info($id)  { $self->_get($id) }
     method args                 { my $a = $self->{arg}; $self->{arg} = []; $a }
+    method movie_uri($id)       { "http://movie/$id" }
 }
 
 use App::Watchman;

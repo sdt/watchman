@@ -142,6 +142,8 @@ method _augment_movie ($movie) {
     $movie->{nzbsearch_uri} = $self->newznab->search_uri(
             $movie->{title} . ' ' . $movie->{year}
         );
+
+    $movie->{tmdb_uri} = $self->tmdb->movie_uri($movie->{tmdb_id});
 }
 
 # Builder methods

@@ -57,10 +57,15 @@ method get_movie_info ($tmdb_id) {
     $log->info("Fetching movie info for #$tmdb_id");
     my $info = $self->api->movie->info( ID => $tmdb_id );
     return {
-        tmdb_id => $info->{id},
-        title   => $info->{title},
-        year    => substr($info->{release_date}, 0, 4),
+        tmdb_id  => $info->{id},
+        title    => $info->{title},
+        year     => substr($info->{release_date}, 0, 4),
     };
+}
+
+method movie_uri ($tmdb_id) {
+    return "http://www.themoviedb.org/movie/$tmdb_id";
+
 }
 
 1;
