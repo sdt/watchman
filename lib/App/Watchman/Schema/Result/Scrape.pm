@@ -8,16 +8,14 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use App::Watchman::Schema::ColumnTypes qw( ForeignKey Integer );
+
 __PACKAGE__->table('scrapes');
 __PACKAGE__->add_columns(
-    movie_fk =>
-        { data_type => 'integer', is_nullable => 0, is_foreign_key => 1, },
-    indexer_fk =>
-        { data_type => 'integer', is_nullable => 0, is_foreign_key => 1, },
-    last_searched =>
-        { data_type => 'integer', is_nullable => 0, default_value => 0, },
-    last_nzbdate =>
-        { data_type => 'integer', is_nullable => 0, default_value => 0, },
+    movie_fk        => ForeignKey,
+    indexer_fk      => ForeignKey,
+    last_searched   => Integer(default_value => 0),
+    last_nzbdate    => Integer(default_value => 0),
 );
 __PACKAGE__->set_primary_key(qw( movie_fk indexer_fk ));
 

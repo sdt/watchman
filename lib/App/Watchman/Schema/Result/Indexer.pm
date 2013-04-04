@@ -9,19 +9,17 @@ use warnings;
 use base 'DBIx::Class::Core';
 use Method::Signatures;
 
+use App::Watchman::Schema::ColumnTypes qw( PrimaryKey Integer Text Boolean );
+
 __PACKAGE__->table('indexers');
 __PACKAGE__->add_columns(
-    indexer_id =>
-        { data_type => 'integer', is_nullable => 0, is_auto_increment => 1 },
-    name =>
-        { data_type => 'text',    is_nullable => 0 },
-    base_uri =>
-        { data_type => 'text',    is_nullable => 0 },
-    apikey =>
-        { data_type => 'integer', is_nullable => 0 },
-    active =>
-        { data_type => 'boolean', is_nullable => 0, default_value => 1, },
+    indexer_id  => PrimaryKey,
+    name        => Text,
+    base_uri    => Text,
+    apikey      => Integer,
+    active      => Boolean(default_value => 1),
 );
+
 __PACKAGE__->set_primary_key('indexer_id');
 __PACKAGE__->has_many(
     scrapes => 'App::Watchman::Schema::Result::Scrape',
