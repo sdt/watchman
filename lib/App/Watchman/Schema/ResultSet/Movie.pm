@@ -9,6 +9,10 @@ use warnings;
 use base 'App::Watchman::Schema::ResultSet';
 use Method::Signatures;
 
+method sorted {
+    $self->search_rs(undef, { order_by => [qw( title year )] });
+}
+
 method as_ids {
     return $self->search(undef, {
             select => [qw( tmdb_id )],

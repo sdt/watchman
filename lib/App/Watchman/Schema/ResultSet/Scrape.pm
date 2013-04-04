@@ -9,6 +9,12 @@ use warnings;
 use base 'App::Watchman::Schema::ResultSet';
 use Method::Signatures;
 
+method sorted {
+    $self->search_rs(undef, { order_by => [qw(
+        movie.title movie.year indexer.name
+    )] });
+}
+
 method searchlist($search_min_age) {
     my $search_cutoff = time - $search_min_age;
     $self->search(

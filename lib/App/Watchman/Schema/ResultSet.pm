@@ -15,8 +15,4 @@ method as_hashes {
         });
 }
 
-method sorted {
-    $self->search_rs(undef, { order_by => [qw( title year )] });
-}
-
 1;
