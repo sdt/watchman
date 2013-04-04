@@ -24,6 +24,8 @@ method new ($class: :$filename) {
     return $self;
 }
 
-__PACKAGE__->load_namespaces;
+__PACKAGE__->load_namespaces(
+    default_resultset_class => '+App::Watchman::Schema::ResultSet',
+);
 
 1;

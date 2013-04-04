@@ -1,30 +1,29 @@
-package App::Watchman::Schema::Result::Movie;
+package App::Watchman::Schema::Result::Indexer;
 
 use 5.12.0;
 use warnings;
 
-# ABSTRACT: Movie result class
+# ABSTRACT: Indexer class
 # VERSION
 
 use base 'DBIx::Class::Core';
 use Method::Signatures;
 
-__PACKAGE__->table('movies');
+__PACKAGE__->table('indexers');
 __PACKAGE__->add_columns(
-    tmdb_id =>
-        { data_type => 'integer', is_nullable => 0 },
-    title =>
+    indexer_id =>
+        { data_type => 'integer', is_nullable => 0, is_auto_increment => 1 },
+    base_uri =>
         { data_type => 'text',    is_nullable => 0 },
-    year =>
+    apikey =>
         { data_type => 'integer', is_nullable => 0 },
     active =>
         { data_type => 'boolean', is_nullable => 0, default_value => 1, },
 );
-__PACKAGE__->set_primary_key('tmdb_id');
-
+__PACKAGE__->set_primary_key('indexer_id');
 __PACKAGE__->has_many(
     scrapes => 'App::Watchman::Schema::Result::Scrape',
-    { 'foreign.movie_fk' => 'self.tmdb_id' },
+    { 'foreign.indexer_fk' => 'self.indexer_id' },
 );
 
 method insert (@args) {
@@ -32,14 +31,14 @@ method insert (@args) {
     my $guard = $schema->txn_scope_guard;
 
     $self->next::method(@args);
-    my $indexers = $schema->resultset('Indexer');
-    while (my $indexer = $indexers->next) {
-        $self->create_related('scrapes', { indexer => $indexer });
+    my $movies = $schema->resultset('Movie');
+    while (my $movie = $movies->next) {
+        $self->create_related(scrapes => { movie => $movie });
     }
 
     $guard->commit;
 
-    return $self
+    return $self;
 }
 
 1;
