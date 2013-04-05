@@ -9,25 +9,19 @@ use warnings;
 use App::Watchman::Config;
 use App::Watchman::EmailFormatter;
 use App::Watchman::Mailer;
-use App::Watchman::Newznab;
 use App::Watchman::Schema;
 use App::Watchman::TMDB;
 
-use List::Util qw( max );
 use Log::Any qw( $log );
-use Try::Tiny;
-
+use LWP::UserAgent;
 use Method::Signatures;
 use Moo;
 use namespace::autoclean;
+use Try::Tiny;
 
-has [qw( config mailer newznab schema tmdb search_min_age )] => (
+has [qw( config mailer schema tmdb search_min_age ua )] => (
     is => 'lazy',
 );
-
-method movies {
-    return $self->schema->resultset('Movie');
-}
 
 method run {
     my $stash = {};
@@ -36,7 +30,8 @@ method run {
         $self->_update_watchlist($stash, $watchlist);
     }
 
-    my $searchlist = $self->movies->searchlist($self->search_min_age);
+    my $scrape_rs = $self->schema->resultset('Scrape');
+    my $searchlist = $scrape_rs->searchlist($self->search_min_age);
     $self->_run_searches($stash, $searchlist);
 
     if (%$stash) {
@@ -62,7 +57,7 @@ method _update_watchlist($stash, $watchlist) {
     # Ask TMDB for the current watchlist
     $log->info(scalar @$watchlist, ' items in watchlist');
 
-    my $movies_rs = $self->movies;
+    my $movies_rs = $self->schema->resultset('Movie');
 
     my %seen;
     my $deactivated = $movies_rs->deactivated(@$watchlist);
@@ -92,35 +87,25 @@ method _update_watchlist($stash, $watchlist) {
 method _run_searches($stash, $searchlist) {
 
     $log->info($searchlist->count, ' items in searchlist');
-
     my @new_hits;
-    my $now = time;
 
     # For each movie in the search list, update the search results
-    while (my $movie = $searchlist->next) {
-        my $title = $movie->title . ' ' . $movie->year;
-        my $results;
+    while (my $scrape = $searchlist->next) {
+        my @results;
         try {
-            $results = $self->newznab->search($title);
+            @results = $scrape->run($self->ua);
         }
         catch {
-            push(@{ $stash->{errors} }, "NZB search '$title' failed: $_");
+            push(@{ $stash->{errors} }, $_);
         };
-        next unless $results;
+        next unless @results;
 
-        @$results = grep { $_->{date} > $movie->last_nzbdate } @$results;
-        if (@$results) {
-            $movie->set_column(last_nzbdate
-                => max map { $_->{date} } @$results);
-            push(@new_hits, {
-                movie => { $movie->get_columns },
-                results => $results,
-            });
+        push(@new_hits, {
+            movie => { $scrape->movie->get_columns },
+            results => \@results,
+        });
 
-            $log->info(scalar @$results, " new hits for $title");
-        }
-
-        $movie->update({ last_searched => $now });
+        $log->info(scalar @results, " new hits for ", $scrape->movie->name);
     }
 
     $stash->{search_hits} = \@new_hits if @new_hits;
@@ -139,9 +124,8 @@ method _augment_stash ($stash) {
 }
 
 method _augment_movie ($movie) {
-    $movie->{nzbsearch_uri} = $self->newznab->search_uri(
-            $movie->{title} . ' ' . $movie->{year}
-        );
+    $movie->{nzbsearch_uri} = 'TODO';
+#    $movie->{nzbsearch_uri} = $self->newznab->search_uri($movie->{name});
 
     $movie->{tmdb_uri} = $self->tmdb->movie_uri($movie->{tmdb_id});
 }
@@ -165,14 +149,6 @@ method _build_mailer {
     );
 }
 
-method _build_newznab {
-    my $cfg = $self->config->{newznab};
-    return App::Watchman::Newznab->new(
-        apikey      => $cfg->{apikey},
-        base_uri    => $cfg->{base_uri},
-    );
-}
-
 method _build_schema {
     my $cfg = $self->config;
     return App::Watchman::Schema->new(
@@ -186,6 +162,10 @@ method _build_tmdb {
         session_id => $cfg->{session},
         user_id    => $cfg->{user},
     );
+}
+
+method _build_ua {
+    return LWP::UserAgent->new;
 }
 
 1;

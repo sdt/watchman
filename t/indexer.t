@@ -40,28 +40,28 @@ my $indexer = $schema->resultset('Indexer')->create({
 
 note 'Check good data';
 $ua->add_results( make_responses($good_data) );
-my $results = $indexer->scrape($ua, 'xxx');
+my @results = $indexer->scrape($ua, 'xxx');
 
-is(scalar @$results, 2, 'Two search results');
+is(scalar @results, 2, 'Two search results');
 #eq_or_diff([ map { $_->{nzbid}   } @$results ],
 #           [ 111, 222 ], 'Ids match');
-eq_or_diff([ map { $_->{name} } @$results ],
+eq_or_diff([ map { $_->{name} } @results ],
            [ map { "Movie $_" } (1 .. 2) ], 'Names match');
-eq_or_diff([ map { $_->{link} } @$results ],
+eq_or_diff([ map { $_->{link} } @results ],
            [ map { "http://site.com/$_/" } (1 .. 2) ], 'Links match');
 
 note 'Check single search result';
 $ua->add_results( make_responses($single_data) );
-$results = $indexer->scrape($ua, 'xxx');
+@results = $indexer->scrape($ua, 'xxx');
 
-is(scalar @$results, 1, 'One search result');
-is($results->[0]->{name}, 'Movie 3', 'Name matches');
-is($results->[0]->{link}, 'http://site.com/3/', 'Link matches');
+is(scalar @results, 1, 'One search result');
+is($results[0]->{name}, 'Movie 3', 'Name matches');
+is($results[0]->{link}, 'http://site.com/3/', 'Link matches');
 
 note 'Check no results';
 $ua->add_results( make_responses({}) );
-$results = $indexer->scrape($ua, 'xxx');
-eq_or_diff($results, [ ], 'No results');
+@results = $indexer->scrape($ua, 'xxx');
+eq_or_diff(\@results, [ ], 'No results');
 
 #note 'Check other error';
 #$ua->add_results( make_responses('error:something') );

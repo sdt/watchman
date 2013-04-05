@@ -7,6 +7,9 @@ use warnings;
 # VERSION
 
 use base 'DBIx::Class::Core';
+use List::Util qw( max );
+use Method::Signatures;
+use Try::Tiny;
 
 use App::Watchman::Schema::ColumnTypes qw( ForeignKey Integer );
 
@@ -28,5 +31,22 @@ __PACKAGE__->belongs_to(
     indexer => 'App::Watchman::Schema::Result::Indexer',
     { 'foreign.indexer_id' => 'self.indexer_fk' },
 );
+
+method run($ua) {
+    my @results;
+    try {
+        @results = grep { $_->{date} > $self->last_nzbdate }
+                        $self->indexer->scrape($self->movie->name);
+    }
+    catch {
+        die('Search for "' . $self->movie->name .
+            ' on ' . $self->indexer->name . " failed: $_");
+    };
+    $self->set_column(last_nzbdate => max map { $_->{date} } @results)
+        if @results;
+    $self->update({ last_searched => time });
+
+    return @results;
+}
 
 1;

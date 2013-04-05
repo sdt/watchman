@@ -70,7 +70,7 @@ method scrape ($ua, $title) {
     my @results = _decode($response->content);
     $log->info('Found ', scalar @results, ' raw results');
 
-    return \@results;
+    return @results;
 }
 
 method search_uri ($title) {

@@ -258,5 +258,4 @@ sub contains {
     my ($got, $substr, $msg) = @_;
     $msg //= "'$got' contains '$substr'";
     $TB->like($got, qr/\Q$substr\E/, $msg);
-
 }

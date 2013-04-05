@@ -25,6 +25,10 @@ __PACKAGE__->has_many(
     { 'foreign.movie_fk' => 'self.tmdb_id' },
 );
 
+method name {
+    return $self->title . ' ' . $self->year;
+}
+
 method insert (@args) {
     my $schema = $self->result_source->schema;
     my $guard = $schema->txn_scope_guard;
