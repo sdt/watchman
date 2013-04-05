@@ -3,7 +3,7 @@ use warnings;
 use Test::More;
 use Test::FailWarnings;
 
-use App::Watchman::Newznab;
+use App::Watchman::Schema::Result::Indexer;
 
 my %samples = (
     q(Bob's Burgers) => q(Bobs Burgers),
@@ -11,7 +11,7 @@ my %samples = (
 );
 
 while (my ($before, $after) = each %samples) {
-    my $got = App::Watchman::Newznab::_normalise_title($before);
+    my $got = App::Watchman::Schema::Result::Indexer::_normalise_title($before);
     if ($before eq $after) {
         is($got, $after, "'$before' is unmodified");
     }

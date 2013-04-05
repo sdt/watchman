@@ -9,7 +9,8 @@ use HTTP::Headers;
 use HTTP::Response;
 use JSON;
 
-use App::Watchman::Newznab;
+use App::Watchman::Schema;
+my $schema = App::Watchman::Schema->new(filename => ':memory:');
 
 my $good_data = { channel => { item => [
     {
@@ -33,13 +34,13 @@ my $single_data = { channel => { item =>
 }};
 
 my $ua = Test::Mock::UserAgent->new;
-my $tmdb = App::Watchman::Newznab->new(
-    ua => $ua, apikey => 'testing', base_uri => 'http://test.test',
-);
+my $indexer = $schema->resultset('Indexer')->create({
+    name => 'testing', apikey => 'testing', base_uri => 'http://test.test',
+});
 
 note 'Check good data';
 $ua->add_results( make_responses($good_data) );
-my $results = $tmdb->search('xxx');
+my $results = $indexer->scrape($ua, 'xxx');
 
 is(scalar @$results, 2, 'Two search results');
 #eq_or_diff([ map { $_->{nzbid}   } @$results ],
@@ -51,7 +52,7 @@ eq_or_diff([ map { $_->{link} } @$results ],
 
 note 'Check single search result';
 $ua->add_results( make_responses($single_data) );
-$results = $tmdb->search('xxx');
+$results = $indexer->scrape($ua, 'xxx');
 
 is(scalar @$results, 1, 'One search result');
 is($results->[0]->{name}, 'Movie 3', 'Name matches');
@@ -59,16 +60,16 @@ is($results->[0]->{link}, 'http://site.com/3/', 'Link matches');
 
 note 'Check no results';
 $ua->add_results( make_responses({}) );
-$results = $tmdb->search('xxx');
+$results = $indexer->scrape($ua, 'xxx');
 eq_or_diff($results, [ ], 'No results');
 
 #note 'Check other error';
 #$ua->add_results( make_responses('error:something') );
-#throws_ok { $tmdb->search('xxx') } qr/something/;
+#throws_ok { $indexer->search('xxx') } qr/something/;
 
 note 'Check failure';
 $ua->add_results(HTTP::Response->new(500, 'FAIL'));
-throws_ok { $tmdb->search('xxx') } qr/FAIL/;
+throws_ok { $indexer->scrape($ua, 'xxx') } qr/FAIL/;
 
 done_testing;
 
