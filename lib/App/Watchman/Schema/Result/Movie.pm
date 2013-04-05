@@ -29,19 +29,4 @@ method name {
     return $self->title . ' ' . $self->year;
 }
 
-method insert (@args) {
-    my $schema = $self->result_source->schema;
-    my $guard = $schema->txn_scope_guard;
-
-    $self->next::method(@args);
-    my $indexers = $schema->resultset('Indexer');
-    while (my $indexer = $indexers->next) {
-        $self->create_related('scrapes', { indexer => $indexer });
-    }
-
-    $guard->commit;
-
-    return $self
-}
-
 1;

@@ -30,8 +30,7 @@ method run {
         $self->_update_watchlist($stash, $watchlist);
     }
 
-    my $scrape_rs = $self->schema->resultset('Scrape');
-    my $searchlist = $scrape_rs->searchlist($self->search_min_age);
+    my $searchlist = $self->_get_searchlist;
     $self->_run_searches($stash, $searchlist);
 
     if (%$stash) {
@@ -86,11 +85,11 @@ method _update_watchlist($stash, $watchlist) {
 
 method _run_searches($stash, $searchlist) {
 
-    $log->info($searchlist->count, ' items in searchlist');
+    $log->info(scalar @$searchlist, ' items in searchlist');
     my @new_hits;
 
     # For each movie in the search list, update the search results
-    while (my $scrape = $searchlist->next) {
+    for my $scrape (@$searchlist) {
         my @results;
         try {
             @results = $scrape->run($self->ua);
@@ -109,6 +108,35 @@ method _run_searches($stash, $searchlist) {
     }
 
     $stash->{search_hits} = \@new_hits if @new_hits;
+}
+
+method _get_searchlist {
+
+    my @movies = $self->resultset('Movie')
+                      ->search({ active => 1 })
+                      ->get_column('tmdb_id')
+                      ->all;
+
+    my @indexers = $self->resultset('Indexer')
+                        ->search({ active => 1 })
+                        ->get_column('indexer_id')
+                        ->all;
+
+    my $scrapes = $self->resultset('Scrape');
+    my @searchlist;
+    my $cutoff = time - $self->search_min_age;
+
+    for my $movie_id (@movies) {
+        for my $indexer_id (@indexers) {
+            my $scrape = $scrapes->find_or_new({
+                movie_fk => $movie_id,
+                indexer_fk => $indexer_id,
+            });
+            next if $scrape->last_searched > $cutoff;
+            push(@searchlist, $scrape);
+        }
+    }
+    return \@searchlist;
 }
 
 method _augment_stash ($stash) {

@@ -25,11 +25,13 @@ __PACKAGE__->set_primary_key(qw( movie_fk indexer_fk ));
 __PACKAGE__->belongs_to(
     movie => 'App::Watchman::Schema::Result::Movie',
     { 'foreign.tmdb_id' => 'self.movie_fk' },
+    { join_type => 'LEFT OUTER' },
 );
 
 __PACKAGE__->belongs_to(
     indexer => 'App::Watchman::Schema::Result::Indexer',
     { 'foreign.indexer_id' => 'self.indexer_fk' },
+    { join_type => 'LEFT OUTER' },
 );
 
 method run($ua) {
@@ -42,9 +44,9 @@ method run($ua) {
         die('Search for "' . $self->movie->name .
             ' on ' . $self->indexer->name . " failed: $_");
     };
-    $self->set_column(last_nzbdate => max map { $_->{date} } @results)
-        if @results;
-    $self->update({ last_searched => time });
+    $self->last_nzbdate(max map { $_->{date} } @results) if @results;
+    $self->last_searched(time);
+    $self->update_or_insert;
 
     return @results;
 }

@@ -33,23 +33,6 @@ __PACKAGE__->has_many(
 __PACKAGE__->add_unique_constraint([qw( name )]);
 __PACKAGE__->add_unique_constraint([qw( base_uri )]);
 
-# When add a new indexer, we also want to create an associated scrape for every
-# movie.
-method insert (@args) {
-    my $schema = $self->result_source->schema;
-    my $guard = $schema->txn_scope_guard;
-
-    $self->next::method(@args);
-    my $movies = $schema->resultset('Movie');
-    while (my $movie = $movies->next) {
-        $self->create_related(scrapes => { movie => $movie });
-    }
-
-    $guard->commit;
-
-    return $self;
-}
-
 method scrape ($ua, $title) {
     my $name = $self->name;
     $log->info("Searching newznab [$name] for [$title]");
