@@ -31,7 +31,7 @@ Time::Fake->offset($timenow);
     use base 'Local::Mock::Base';
     use Method::Signatures;
 
-    method search($term)        { $self->get // [ ] }
+    method search($term, $id)   { $self->get // [ ] }
     method search_uri($term)    { "http://search/$term" }
 }
 
@@ -201,7 +201,7 @@ sub subhashref {
 
 sub movie_hashes {
     my ($movies) = @_;
-    my @keys = qw( title year tmdb_id );
+    my @keys = qw( imdb_id title year tmdb_id );
     return [ map { subhashref($_, \@keys) } @$movies ];
 }
 
@@ -215,6 +215,7 @@ sub movie {
     my $id = $next_id++;
     return {
         tmdb_id => $id,
+        imdb_id => 1000 + $id,
         title   => sprintf("movie%03d", $id),
         year    => 1990 + $id,
     };

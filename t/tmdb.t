@@ -32,21 +32,25 @@ my @info_responses = (
         title => "Title 73",
         id => 73,
         release_date => "1977-12-27",
+        imdb_id => 'tt073',
     },
     {
         title => "Title 180",
         id => 180,
         release_date => "1927-12-27",
+        imdb_id => 'tt0180',
     },
     {
         title => "Title 666",
         id => 666,
         release_date => "1955-12-27",
+        imdb_id => 'tt0666',
     },
     {
         title => "Title 807",
         id => 807,
         release_date => "1998-12-27",
+        imdb_id => 'tt0807',
     },
 );
 
@@ -76,6 +80,7 @@ for my $i (0 .. $#info_responses) {
     is($info->{title}, $expected->{title}, "Title $i is ok");
     is($info->{tmdb_id}, $expected->{id}, "TMDB ID $i is ok");
     is($info->{year}, substr($expected->{release_date}, 0, 4), "Year $i is ok");
+    is($info->{imdb_id}, '0' . $expected->{id}, "TMDB ID $i is ok");
 }
 
 done_testing;
