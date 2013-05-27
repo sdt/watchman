@@ -16,6 +16,8 @@ __PACKAGE__->add_columns(
         { data_type => 'text',    is_nullable => 0 },
     year =>
         { data_type => 'integer', is_nullable => 0 },
+    imdb_id =>
+        { data_type => 'text', is_nullable => 0 },
     last_searched =>
         { data_type => 'integer', is_nullable => 0, default_value => 0, },
     last_nzbdate =>
