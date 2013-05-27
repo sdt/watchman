@@ -36,16 +36,15 @@ has ua => (
     default => sub { LWP::UserAgent->new },
 );
 
-method search ($title) {
+method search ($title, $imdb_id) {
     $log->info("Searching newznab for [$title]");
 
     my $uri = URI->new($self->base_uri . '/api');
     $uri->query_form(
         apikey  => $self->apikey,
-        t       => 'search',
+        t       => 'movie',
         o       => 'json',
-        cat     => 2000,
-        q       =>  _normalise_title($title),
+        imdbid  =>  $imdb_id,
     );
     my $response = $self->ua->get($uri);
 

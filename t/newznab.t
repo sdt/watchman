@@ -39,7 +39,7 @@ my $tmdb = App::Watchman::Newznab->new(
 
 note 'Check good data';
 $ua->add_results( make_responses($good_data) );
-my $results = $tmdb->search('xxx');
+my $results = $tmdb->search('xxx', '666');
 
 is(scalar @$results, 2, 'Two search results');
 #eq_or_diff([ map { $_->{nzbid}   } @$results ],
@@ -51,7 +51,7 @@ eq_or_diff([ map { $_->{link} } @$results ],
 
 note 'Check single search result';
 $ua->add_results( make_responses($single_data) );
-$results = $tmdb->search('xxx');
+$results = $tmdb->search('xxx', '666');
 
 is(scalar @$results, 1, 'One search result');
 is($results->[0]->{name}, 'Movie 3', 'Name matches');
@@ -59,7 +59,7 @@ is($results->[0]->{link}, 'http://site.com/3/', 'Link matches');
 
 note 'Check no results';
 $ua->add_results( make_responses({}) );
-$results = $tmdb->search('xxx');
+$results = $tmdb->search('xxx', '666');
 eq_or_diff($results, [ ], 'No results');
 
 #note 'Check other error';
@@ -68,7 +68,7 @@ eq_or_diff($results, [ ], 'No results');
 
 note 'Check failure';
 $ua->add_results(HTTP::Response->new(500, 'FAIL'));
-throws_ok { $tmdb->search('xxx') } qr/FAIL/;
+throws_ok { $tmdb->search('xxx', '666') } qr/FAIL/;
 
 done_testing;
 

@@ -113,7 +113,7 @@ method _run_searches($stash, $searchlist) {
         my $title = $movie->title . ' ' . $movie->year;
         my $results;
         try {
-            $results = $self->newznab->search($title);
+            $results = $self->newznab->search($title, $movie->imdb_id);
         }
         catch {
             push(@{ $stash->{errors} }, "NZB search '$title' failed: $_");

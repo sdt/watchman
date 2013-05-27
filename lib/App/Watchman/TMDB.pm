@@ -58,6 +58,7 @@ method get_movie_info ($tmdb_id) {
     my $info = $self->api->movie->info( ID => $tmdb_id );
     return {
         tmdb_id  => $info->{id},
+        imdb_id  => $info->{imdb_id} =~ s/^tt//r,
         title    => $info->{title},
         year     => substr($info->{release_date}, 0, 4),
     };
