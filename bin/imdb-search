@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+
+use 5.12.0;
+use warnings;
+#
+# PODNAME: imdb-search
+# ABSTRACT: Search by imdb id
+# VERSION
+
+
+use App::Watchman;
+
+use Log::Any::Adapter;
+use Log::Any::Plugin;
+use Number::Bytes::Human qw(format_bytes);
+use Try::Tiny;
+
+#Log::Any::Adapter->set('Stdout');
+#Log::Any::Plugin->add('Stringify');
+#Log::Any::Plugin->add('Levels', level => 'info');
+
+sub usage {
+    die "usage: $0 imdb-id\n";
+}
+
+usage unless @ARGV == 1;
+my $imdbid = $ARGV[0];
+$imdbid =~ s/^tt//;
+
+my $watchman = App::Watchman->new;
+my $results = $watchman->newznab->search("IMDb #$imdbid", $imdbid);
+
+my $today = DateTime->now;
+for my $hit (@$results) {
+    my $date = DateTime->from_epoch( epoch => $hit->{date} );
+    my $days_old = $date->delta_days($today)->in_units('days');
+    printf("%-4s  %-4s  %s\n%s\n\n",
+        format_bytes($hit->{size}),
+        $days_old . 'd',
+        $hit->{name},
+        $hit->{link},
+    );
+}
+
+exit 0;
