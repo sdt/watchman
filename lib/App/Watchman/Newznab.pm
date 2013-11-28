@@ -33,7 +33,9 @@ has [qw( base_uri apikey )] => (
 
 has ua => (
     is => 'lazy',
-    default => sub { LWP::UserAgent->new },
+    default => sub {
+        LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } )
+    },
 );
 
 method search ($title, $imdb_id) {
