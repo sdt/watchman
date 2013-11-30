@@ -8,7 +8,7 @@ use warnings;
 
 use DateTime;
 use DateTime::Format::Strptime;
-use JSON qw( decode_json );
+use JSON v2.61 qw( decode_json );
 use Log::Any qw( $log );
 use LWP::UserAgent;
 use URI;
