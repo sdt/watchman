@@ -34,7 +34,12 @@ has [qw( base_uri apikey )] => (
 has ua => (
     is => 'lazy',
     default => sub {
-        LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } )
+        LWP::UserAgent->new(
+            ssl_opts => {
+                verify_hostname => 0,
+                SSL_verify_mode => 'SSL_VERIFY_NONE',
+            }
+        )
     },
 );
 
