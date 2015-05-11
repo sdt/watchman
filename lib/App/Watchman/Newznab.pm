@@ -6,6 +6,7 @@ use warnings;
 # ABSTRACT: tmdb watchlist scraper
 # VERSION
 
+use Data::Dumper::Concise;
 use DateTime;
 use DateTime::Format::Strptime;
 use JSON v2.61 qw( decode_json );
