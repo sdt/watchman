@@ -21,7 +21,7 @@ use namespace::autoclean;
 my $datetime_parser = new DateTime::Format::Strptime(
     # "Fri, 16 Nov 2012 17:03:58 +0000",
     pattern => '%a, %d %b %Y %T %z',
-    on_error => 'croak',
+    on_error => 'undef',
     time_zone => 'UTC',
 );
 
@@ -51,6 +51,7 @@ method search ($title, $imdb_id) {
         apikey  => $self->apikey,
         t       => 'movie',
         o       => 'json',
+        extended  => 1,
         imdbid  =>  $imdb_id,
     );
     my $response = $self->ua->get($uri);
@@ -96,8 +97,15 @@ func _decode ($json) {
     return reverse sort { $a->{date} <=> $b->{date} } @results;
 }
 
+my $default_datetime = DateTime->new(year => 2000);
+
 func _parse_date($datestr) {
-    return $datetime_parser->parse_datetime($datestr)->epoch();
+    my $datetime =  $datetime_parser->parse_datetime($datestr);
+    if (!defined $datetime) {
+        print "Bad date: ", Dumper($datestr);
+        $datetime = $default_datetime;
+    }
+    return $datetime->epoch();
 }
 
 1;
