@@ -28,7 +28,9 @@ has [qw( api ua )] => (
 );
 
 method _build_api {
-    WWW::TMDB::API->new( api_key => $api_key, ua => $self->ua );
+    my $api = WWW::TMDB::API->new( api_key => $api_key, ua => $self->ua );
+    $api->{url} =~ s/http:/https:/;
+    return $api;
 }
 
 method _build_ua {
