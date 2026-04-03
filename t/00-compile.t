@@ -21,8 +21,8 @@ my @module_files = (
 );
 
 my @scripts = (
-    'bin/imdb-search',
-    'bin/watchman'
+    'script/imdb-search',
+    'script/watchman'
 );
 
 # no fake home requested
