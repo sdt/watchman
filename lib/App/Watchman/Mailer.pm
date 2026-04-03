@@ -11,7 +11,7 @@ use Email::Simple;
 use Log::Any qw( $log );
 use Sys::Hostname;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 use Moo;
 use MooX::Types::MooseLike::Email qw( EmailAddress );
 use namespace::autoclean;

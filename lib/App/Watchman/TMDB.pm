@@ -10,7 +10,7 @@ use Log::Any qw( $log );
 use LWP::UserAgent;
 use WWW::TMDB::API;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 use Moo;
 use MooX::Types::MooseLike::Base qw( Str );
 use namespace::autoclean;
@@ -27,17 +27,17 @@ has [qw( api ua )] => (
     is => 'lazy',
 );
 
-method _build_api {
+method _build_api() {
     my $api = WWW::TMDB::API->new( api_key => $api_key, ua => $self->ua );
     $api->{url} =~ s/http:/https:/;
     return $api;
 }
 
-method _build_ua {
+method _build_ua() {
     LWP::UserAgent->new
 }
 
-method get_watchlist {
+method get_watchlist() {
     $log->info('Fetching watchlist from TMDB');
 
     my @ids;
