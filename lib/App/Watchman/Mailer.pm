@@ -1,6 +1,5 @@
 package App::Watchman::Mailer;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: email sender

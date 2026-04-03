@@ -1,4 +1,4 @@
-use 5.12.0;
+use v5.34;
 use warnings;
 use Test::More;
 use Test::FailWarnings;

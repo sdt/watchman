@@ -1,6 +1,5 @@
 package App::Watchman::Newznab;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: tmdb watchlist scraper

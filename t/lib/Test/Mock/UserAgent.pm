@@ -1,6 +1,5 @@
 package Test::Mock::UserAgent;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 use Function::Parameters qw( :strict classmethod );

@@ -1,6 +1,5 @@
 package App::Watchman::Schema::Result::Movie;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: Movie result class
