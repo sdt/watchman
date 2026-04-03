@@ -1,6 +1,5 @@
 package App::Watchman::Schema::ResultSet::Movie;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: Movie resultset class
@@ -8,21 +7,21 @@ use warnings;
 
 use base 'App::Watchman::Schema::ResultSet';
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 
-method as_hashes {
+method as_hashes() {
     return $self->search(undef, {
             result_class => 'DBIx::Class::ResultClass::HashRefInflator',
         });
 }
 
-method as_ids {
+method as_ids() {
     return $self->search(undef, {
             select => [qw( tmdb_id )],
         });
 }
 
-method sorted {
+method sorted() {
     $self->search_rs(undef, { order_by => [qw( title year )] });
 }
 

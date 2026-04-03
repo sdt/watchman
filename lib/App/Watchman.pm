@@ -1,6 +1,5 @@
 package App::Watchman;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: watch for interesting posts and notify about them
@@ -14,7 +13,7 @@ use List::Util qw( max );
 use Log::Any qw( $log );
 use Try::Tiny;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 use Moo;
 use namespace::autoclean;
 
@@ -28,20 +27,20 @@ for my $package (qw( Mailer Newznab Schema TMDB)) {
     my $class = 'App::Watchman::' . $package;
     has $attr => (
         is => 'lazy',
-        default => method { load_class($class)->new($self->config->{$attr}) },
+        default => method() { load_class($class)->new($self->config->{$attr}) },
     );
 }
 
 has search_min_age => (
     is => 'lazy',
-    default => method { ($self->config->{search_min_hours} // 24 ) * 60 * 60 },
+    default => method() { ($self->config->{search_min_hours} // 24 ) * 60 * 60 },
 );
 
-method movies {
+method movies() {
     return $self->schema->resultset('Movie');
 }
 
-method run {
+method run() {
     my $stash = {};
 
     if (my $watchlist = $self->_fetch_watchlist($stash)) {

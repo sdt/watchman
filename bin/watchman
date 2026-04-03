@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # PODNAME: watchman

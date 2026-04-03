@@ -1,11 +1,10 @@
 package Test::Mock::UserAgent;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 
-method new ($class:, @res)  { bless [ @res ], $class }
+classmethod new (@res)      { bless [ @res ], $class }
 method add_results (@res)   { push(@$self, @res) }
 method set_results (@res)   { @$self = @res }
 method request ($req)       { shift(@$self) }

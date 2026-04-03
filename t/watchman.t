@@ -1,4 +1,4 @@
-use 5.12.0;
+use v5.34;
 use warnings;
 use Test::Most;
 use Test::FailWarnings;
@@ -15,9 +15,9 @@ Time::Fake->offset($timenow);
 
 {
     package Local::Mock::Base;
-    use Method::Signatures;
+    use Function::Parameters qw( :strict classmethod );
 
-    method new($class:, %h)     { bless { res => [ ], die => 0, %h }, $class }
+    classmethod new(%h)         { bless { res => [ ], die => 0, %h }, $class }
     method stuff(@a)            { @{ $self->{res} } = @a }
     method die_next($count = 1) { $self->{die} = $count }
     method get()                {
@@ -29,7 +29,7 @@ Time::Fake->offset($timenow);
 {
     package Local::Mock::Newznab;
     use base 'Local::Mock::Base';
-    use Method::Signatures;
+    use Function::Parameters qw( :strict classmethod );
 
     method search($term, $id)   { $self->get // [ ] }
     method search_uri($term)    { "http://search/$term" }
@@ -38,14 +38,14 @@ Time::Fake->offset($timenow);
 {
     package Local::Mock::TMDB;
     use base 'Local::Mock::Base';
-    use Method::Signatures;
+    use Function::Parameters qw( :strict classmethod );
 
-    method new($class:)         { $class->SUPER::new( arg => [] ) }
+    classmethod new()           { $class->SUPER::new( arg => [] ) }
     method _get($a)             { push(@{ $self->{arg} }, $a);
                                   $self->get // [] }
     method get_watchlist()      { $self->_get('wl') }
     method get_movie_info($id)  { $self->_get($id) }
-    method args                 { my $a = $self->{arg}; $self->{arg} = []; $a }
+    method args()               { my $a = $self->{arg}; $self->{arg} = []; $a }
     method movie_uri($id)       { "http://movie/$id" }
 }
 

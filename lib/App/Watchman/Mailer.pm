@@ -1,6 +1,5 @@
 package App::Watchman::Mailer;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: email sender
@@ -11,7 +10,7 @@ use Email::Simple;
 use Log::Any qw( $log );
 use Sys::Hostname;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 use Moo;
 use MooX::Types::MooseLike::Email qw( EmailAddress );
 use namespace::autoclean;

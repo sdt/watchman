@@ -1,6 +1,5 @@
 package App::Watchman::Schema;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: DBIC Schema class
@@ -9,7 +8,7 @@ use warnings;
 use Log::Any qw( $log );
 use base 'DBIx::Class::Schema';
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 
 method new ($class: $config) {
     my $filename = $config->{dbfile};

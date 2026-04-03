@@ -1,6 +1,5 @@
 package App::Watchman::Config;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: watchman configuration

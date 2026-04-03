@@ -1,6 +1,5 @@
 package App::Watchman::Newznab;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: tmdb watchlist scraper
@@ -14,7 +13,7 @@ use Log::Any qw( $log );
 use LWP::UserAgent;
 use URI;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 use Moo;
 use MooX::Types::MooseLike::Base qw( Str );
 use namespace::autoclean;
@@ -69,7 +68,7 @@ method search_uri ($title) {
     return URI->new($self->base_uri . '/search/' . _normalise_title($title));
 }
 
-func _normalise_title ($title) {
+fun _normalise_title ($title) {
     # Been missing hits due to apostrophes, get rid of them!
     $title =~ tr/'//d;
 
@@ -79,7 +78,7 @@ func _normalise_title ($title) {
     return $title;
 }
 
-func _decode ($json) {
+fun _decode ($json) {
     my @results;
 
     my $data = decode_json($json);
@@ -99,7 +98,7 @@ func _decode ($json) {
 
 my $default_datetime = DateTime->new(year => 2000);
 
-func _parse_date($datestr) {
+fun _parse_date($datestr) {
     my $datetime =  $datetime_parser->parse_datetime($datestr);
     if (!defined $datetime) {
         print "Bad date: ", Dumper($datestr);

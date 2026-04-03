@@ -1,6 +1,5 @@
 package App::Watchman::EmailFormatter;
-
-use 5.12.0;
+use v5.34;
 use warnings;
 
 # ABSTRACT: format the email to be sent out
@@ -11,7 +10,7 @@ use Number::Bytes::Human qw(format_bytes);
 use URI::Escape;
 use Template;
 
-use Method::Signatures;
+use Function::Parameters qw( :strict classmethod );
 
 my $template = <<'END_TEMPLATE';
 [%-
@@ -56,7 +55,7 @@ my $template = <<'END_TEMPLATE';
    END; -%]
 END_TEMPLATE
 
-func format_email($stash) {
+fun format_email($stash) {
     my $tt = Template->new;
     $tt->context->define_vmethod(scalar => uri_escape => \&uri_escape);
     $tt->context->define_vmethod(scalar => bytes => sub {
