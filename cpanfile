@@ -1,0 +1,70 @@
+requires 'Class::Load';
+requires 'Config::General';
+requires 'DBD::SQLite';
+requires 'DBIx::Class::Core';
+requires 'DBIx::Class::ResultClass::HashRefInflator';
+requires 'DBIx::Class::ResultSet';
+requires 'DBIx::Class::Schema';
+requires 'Data::Dumper::Concise';
+requires 'DateTime';
+requires 'DateTime::Format::Strptime';
+requires 'Email::Sender::Simple', '0.120002';
+requires 'Email::Simple';
+requires 'File::HomeDir';
+requires 'File::Spec';
+requires 'Function::Parameters';
+requires 'IO::Interactive';
+requires 'JSON', 'v2.61.0';
+requires 'LWP::UserAgent';
+requires 'List::Util';
+requires 'Log::Any';
+requires 'Log::Any::Adapter';
+requires 'Log::Any::Plugin';
+requires 'Moo';
+requires 'MooX::Types::MooseLike::Base';
+requires 'MooX::Types::MooseLike::Email';
+requires 'Number::Bytes::Human';
+requires 'SQL::Translator';
+requires 'Sys::Hostname';
+requires 'Template';
+requires 'Try::Tiny';
+requires 'URI';
+requires 'URI::Escape';
+requires 'WWW::TMDB::API';
+requires 'base';
+requires 'namespace::autoclean';
+requires 'perl', '5.034000';
+requires 'warnings';
+
+on build => sub {
+    requires 'ExtUtils::MakeMaker';
+};
+
+on test => sub {
+    requires 'File::Spec';
+    requires 'File::Temp';
+    requires 'HTTP::Headers';
+    requires 'HTTP::Response';
+    requires 'IO::Handle';
+    requires 'IPC::Open3';
+    requires 'Test::Builder';
+    requires 'Test::FailWarnings';
+    requires 'Test::More';
+    requires 'Test::Most';
+    requires 'Time::Fake';
+    requires 'lib';
+    requires 'strict';
+};
+
+on develop => sub {
+    requires 'Pod::Coverage::TrustPod';
+    requires 'Test::CPAN::Meta';
+    requires 'Test::CPAN::Meta::JSON', '0.16';
+    requires 'Test::EOL';
+    requires 'Test::More', '0.88';
+    requires 'Test::NoTabs';
+    requires 'Test::Perl::Critic';
+    requires 'Test::Pod', '1.41';
+    requires 'Test::Pod::Coverage', '1.08';
+    requires 'Test::Portability::Files';
+};
