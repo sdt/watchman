@@ -12,6 +12,7 @@ use JSON v2.61 qw( decode_json );
 use Log::Any qw( $log );
 use LWP::UserAgent;
 use URI;
+use XML::Parser qw( );
 
 use Function::Parameters qw( :strict classmethod );
 use Moo;
@@ -58,7 +59,22 @@ method search ($title, $imdb_id) {
     die $response->status_line
         unless $response->is_success;
 
-    my @results = _decode($response->content);
+    my @results;
+    my $content = $response->content;
+
+    if ($content =~ /^\s*</) {
+        $log->info('Attempting XML decode');
+        @results = _decode_xml($content);
+    }
+    elsif ($content =~ /^\s*{/) {
+        $log->info('Attempting JSON decode');
+        @results = _decode_json($content);
+    }
+    else {
+        $log->error($content);
+        die q(Can't work out the format of the results);
+    }
+
     $log->info('Found ', scalar @results, ' raw results');
 
     return \@results;
@@ -78,7 +94,67 @@ fun _normalise_title ($title) {
     return $title;
 }
 
-fun _decode ($json) {
+fun _decode_xml ($xml) {
+    my @node_stack;
+    my @items;
+    my $current_item;
+    my %handlers = (
+        Start => fun($expat, $element, %attr) {
+            if ($element eq 'item') {
+                $current_item = { };
+            }
+            my %node = (
+                element => $element,
+                value => '',
+            );
+            $node{attr} = \%attr if %attr;
+            push(@node_stack, \%node);
+        },
+        Char => fun($expat, $str) {
+            my $node = $node_stack[-1];
+            $node->{value} .= $str;
+        },
+        End => fun($expat, $element) {
+            my $path = join('|', map { $_->{element} } @node_stack);
+            my $node = pop(@node_stack);
+            $node->{path} = $path;
+
+            if ($current_item) {
+                if ($element eq 'item') {
+                    push(@items, $current_item);
+                    $current_item = undef;
+                }
+                elsif ($element eq 'newznab:attr') {
+                    my $key = $node->{attr}->{name};
+                    my $value = $node->{attr}->{value};
+                    $current_item->{$key} = $value;
+                }
+                else {
+                    my $value = $node->{value};
+                    if ($value ne '') {
+                        $current_item->{$element} = $value;
+                    }
+                }
+            }
+        },
+    );
+    my $parser = XML::Parser->new(Handlers => \%handlers);
+    $parser->parse($xml);
+
+    my @results;
+    for my $item (@items) {
+        push(@results, {
+            name => $item->{title},
+            link => $item->{guid},
+            date => _parse_date($item->{pubDate}),
+            size => $item->{size},
+        });
+    }
+
+    return reverse sort { $a->{date} <=> $b->{date} } @results;
+}
+
+fun _decode_json ($json) {
     my @results;
 
     my $data = decode_json($json);
