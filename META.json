@@ -88,6 +88,7 @@
             "URI" : "0",
             "URI::Escape" : "0",
             "WWW::TMDB::API" : "0",
+            "XML::Parser" : "0",
             "base" : "0",
             "namespace::autoclean" : "0",
             "perl" : "v5.34.0",
@@ -124,7 +125,7 @@
          "web" : "https://github.com/sdt/watchman"
       }
    },
-   "version" : "0.022",
+   "version" : "1.000",
    "x_contributors" : [
       "Stephen Thirlwall <sdt@dr.com>"
    ],
