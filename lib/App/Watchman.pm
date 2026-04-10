@@ -25,9 +25,10 @@ has config => (
 for my $package (qw( Mailer Newznab Schema TMDB)) {
     my $attr = lc $package;
     my $class = 'App::Watchman::' . $package;
+    load_class($class);
     has $attr => (
         is => 'lazy',
-        default => method() { load_class($class)->new($self->config->{$attr}) },
+        default => method() { $class->new($self->config->{$attr}) },
     );
 }
 
