@@ -3,7 +3,7 @@ use v5.34;
 use warnings;
 
 # ABSTRACT: watch for interesting posts and notify about them
-our $VERSION = '0.022'; # VERSION
+our $VERSION = '1.000'; # VERSION
 
 use App::Watchman::Config;
 use App::Watchman::EmailFormatter;
@@ -25,9 +25,10 @@ has config => (
 for my $package (qw( Mailer Newznab Schema TMDB)) {
     my $attr = lc $package;
     my $class = 'App::Watchman::' . $package;
+    load_class($class);
     has $attr => (
         is => 'lazy',
-        default => method() { load_class($class)->new($self->config->{$attr}) },
+        default => method() { $class->new($self->config->{$attr}) },
     );
 }
 

@@ -31,6 +31,7 @@ requires 'Try::Tiny';
 requires 'URI';
 requires 'URI::Escape';
 requires 'WWW::TMDB::API';
+requires 'XML::Parser';
 requires 'base';
 requires 'namespace::autoclean';
 requires 'perl', '5.034000';
