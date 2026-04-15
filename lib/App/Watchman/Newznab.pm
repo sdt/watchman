@@ -81,7 +81,11 @@ method search ($title, $imdb_id) {
 }
 
 method search_uri ($title) {
-    return URI->new($self->base_uri . '/search/' . _normalise_title($title));
+    # https://v2.nzbs.in/search?category=movies&query=shining+1980
+    my $uri = URI->new($self->base_uri . '/search');
+    $uri->query_param(category => 'movies');
+    $uri->query_param(query => $title);
+    return $uri->as_string;
 }
 
 fun _normalise_title ($title) {

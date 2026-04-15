@@ -3,7 +3,7 @@ use v5.34;
 use warnings;
 
 # ABSTRACT: watch for interesting posts and notify about them
-our $VERSION = '1.000'; # VERSION
+our $VERSION = '1.001'; # VERSION
 
 use App::Watchman::Config;
 use App::Watchman::EmailFormatter;
