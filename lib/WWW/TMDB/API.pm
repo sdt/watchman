@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.04';
+our $VERSION = '0.04-customised';
 use utf8;
 use LWP::UserAgent;
 use HTTP::Request;
@@ -53,7 +53,9 @@ sub send_api {
     $request->header( 'Accept' => 'application/json' );
     my $json_response = $self->{ua}->request($request);
     if ( $json_response->is_success ) {
-        return decode_json $json_response->content();
+        my $content = $json_response->decoded_content(raise_error => 1);
+        my $json = JSON->new->utf8(0);
+        return $json->decode($content);
     }
     else {
         croak
