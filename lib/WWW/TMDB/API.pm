@@ -224,6 +224,7 @@ Optional. This limits the result to items tagged with the specified language. Th
 Optional. [true/false, defaults to false if unspecified]. Set this to true to include adult items in the search results.
 
 =back
+
          $result = $api->movie->search( 'query' => 'Cool Hand' );
 
 
